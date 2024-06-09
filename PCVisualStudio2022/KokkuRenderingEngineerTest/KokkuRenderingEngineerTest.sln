@@ -1,0 +1,110 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.34407.143
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KokkuTest", "KokkuTest\KokkuTest.vcxproj", "{2BEAF928-8650-4FE8-A54F-DA8B2DE92E1F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{30DD3D57-0026-48C8-BFD1-6392F319E23A} = {30DD3D57-0026-48C8-BFD1-6392F319E23A}
+		{DB6193E0-3C12-450F-B344-DC4DAED8C421} = {DB6193E0-3C12-450F-B344-DC4DAED8C421}
+		{339CF6F6-3272-49F6-BF3A-2CEC4685EB8A} = {339CF6F6-3272-49F6-BF3A-2CEC4685EB8A}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{853A0C13-DF96-4CE4-B343-7B41377F0C20}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BunyLib", "..\..\The-Forge\Common_3\Tools\BunyArchive\VisualStudio\BunyLib.vcxproj", "{F4BE7E97-8876-4A34-834F-4BC918020B57}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BunyTool", "..\..\The-Forge\Common_3\Tools\BunyArchive\VisualStudio\BunyTool.vcxproj", "{ADA72694-302E-45F5-AFCA-BB7C56751EEF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gainputstatic", "..\..\The-Forge\Common_3\Application\ThirdParty\OpenSource\gainput\Win64\lib\gainputstatic.vcxproj", "{339CF6F6-3272-49F6-BF3A-2CEC4685EB8A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Renderer", "..\..\The-Forge\Examples_3\Unit_Tests\PC Visual Studio 2019\Libraries\Renderer\Renderer.vcxproj", "{DB6193E0-3C12-450F-B344-DC4DAED8C421}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F3C4507C-E714-4773-AF45-5FA9FB0BB4AF} = {F3C4507C-E714-4773-AF45-5FA9FB0BB4AF}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpirvTools", "..\..\The-Forge\Examples_3\Unit_Tests\PC Visual Studio 2019\Libraries\Tools\SpirvCross.vcxproj", "{F3C4507C-E714-4773-AF45-5FA9FB0BB4AF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OS", "..\..\The-Forge\Examples_3\Unit_Tests\PC Visual Studio 2019\Libraries\OS\OS.vcxproj", "{30DD3D57-0026-48C8-BFD1-6392F319E23A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{339CF6F6-3272-49F6-BF3A-2CEC4685EB8A} = {339CF6F6-3272-49F6-BF3A-2CEC4685EB8A}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_XboxOne|x64 = Debug_XboxOne|x64
+		Debug|x64 = Debug|x64
+		Release_XboxOne|x64 = Release_XboxOne|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2BEAF928-8650-4FE8-A54F-DA8B2DE92E1F}.Debug_XboxOne|x64.ActiveCfg = Debug|x64
+		{2BEAF928-8650-4FE8-A54F-DA8B2DE92E1F}.Debug_XboxOne|x64.Build.0 = Debug|x64
+		{2BEAF928-8650-4FE8-A54F-DA8B2DE92E1F}.Debug|x64.ActiveCfg = Debug|x64
+		{2BEAF928-8650-4FE8-A54F-DA8B2DE92E1F}.Debug|x64.Build.0 = Debug|x64
+		{2BEAF928-8650-4FE8-A54F-DA8B2DE92E1F}.Release_XboxOne|x64.ActiveCfg = Release|x64
+		{2BEAF928-8650-4FE8-A54F-DA8B2DE92E1F}.Release_XboxOne|x64.Build.0 = Release|x64
+		{2BEAF928-8650-4FE8-A54F-DA8B2DE92E1F}.Release|x64.ActiveCfg = Release|x64
+		{2BEAF928-8650-4FE8-A54F-DA8B2DE92E1F}.Release|x64.Build.0 = Release|x64
+		{F4BE7E97-8876-4A34-834F-4BC918020B57}.Debug_XboxOne|x64.ActiveCfg = Debug|x64
+		{F4BE7E97-8876-4A34-834F-4BC918020B57}.Debug_XboxOne|x64.Build.0 = Debug|x64
+		{F4BE7E97-8876-4A34-834F-4BC918020B57}.Debug|x64.ActiveCfg = Debug|x64
+		{F4BE7E97-8876-4A34-834F-4BC918020B57}.Debug|x64.Build.0 = Debug|x64
+		{F4BE7E97-8876-4A34-834F-4BC918020B57}.Release_XboxOne|x64.ActiveCfg = Release|x64
+		{F4BE7E97-8876-4A34-834F-4BC918020B57}.Release_XboxOne|x64.Build.0 = Release|x64
+		{F4BE7E97-8876-4A34-834F-4BC918020B57}.Release|x64.ActiveCfg = Release|x64
+		{F4BE7E97-8876-4A34-834F-4BC918020B57}.Release|x64.Build.0 = Release|x64
+		{ADA72694-302E-45F5-AFCA-BB7C56751EEF}.Debug_XboxOne|x64.ActiveCfg = Debug|x64
+		{ADA72694-302E-45F5-AFCA-BB7C56751EEF}.Debug_XboxOne|x64.Build.0 = Debug|x64
+		{ADA72694-302E-45F5-AFCA-BB7C56751EEF}.Debug|x64.ActiveCfg = Debug|x64
+		{ADA72694-302E-45F5-AFCA-BB7C56751EEF}.Debug|x64.Build.0 = Debug|x64
+		{ADA72694-302E-45F5-AFCA-BB7C56751EEF}.Release_XboxOne|x64.ActiveCfg = Release|x64
+		{ADA72694-302E-45F5-AFCA-BB7C56751EEF}.Release_XboxOne|x64.Build.0 = Release|x64
+		{ADA72694-302E-45F5-AFCA-BB7C56751EEF}.Release|x64.ActiveCfg = Release|x64
+		{ADA72694-302E-45F5-AFCA-BB7C56751EEF}.Release|x64.Build.0 = Release|x64
+		{339CF6F6-3272-49F6-BF3A-2CEC4685EB8A}.Debug_XboxOne|x64.ActiveCfg = Debug|x64
+		{339CF6F6-3272-49F6-BF3A-2CEC4685EB8A}.Debug_XboxOne|x64.Build.0 = Debug|x64
+		{339CF6F6-3272-49F6-BF3A-2CEC4685EB8A}.Debug|x64.ActiveCfg = Debug|x64
+		{339CF6F6-3272-49F6-BF3A-2CEC4685EB8A}.Debug|x64.Build.0 = Debug|x64
+		{339CF6F6-3272-49F6-BF3A-2CEC4685EB8A}.Release_XboxOne|x64.ActiveCfg = Release|x64
+		{339CF6F6-3272-49F6-BF3A-2CEC4685EB8A}.Release_XboxOne|x64.Build.0 = Release|x64
+		{339CF6F6-3272-49F6-BF3A-2CEC4685EB8A}.Release|x64.ActiveCfg = Release|x64
+		{339CF6F6-3272-49F6-BF3A-2CEC4685EB8A}.Release|x64.Build.0 = Release|x64
+		{DB6193E0-3C12-450F-B344-DC4DAED8C421}.Debug_XboxOne|x64.ActiveCfg = Debug|x64
+		{DB6193E0-3C12-450F-B344-DC4DAED8C421}.Debug_XboxOne|x64.Build.0 = Debug|x64
+		{DB6193E0-3C12-450F-B344-DC4DAED8C421}.Debug|x64.ActiveCfg = Debug|x64
+		{DB6193E0-3C12-450F-B344-DC4DAED8C421}.Debug|x64.Build.0 = Debug|x64
+		{DB6193E0-3C12-450F-B344-DC4DAED8C421}.Release_XboxOne|x64.ActiveCfg = Release|x64
+		{DB6193E0-3C12-450F-B344-DC4DAED8C421}.Release_XboxOne|x64.Build.0 = Release|x64
+		{DB6193E0-3C12-450F-B344-DC4DAED8C421}.Release|x64.ActiveCfg = Release|x64
+		{DB6193E0-3C12-450F-B344-DC4DAED8C421}.Release|x64.Build.0 = Release|x64
+		{F3C4507C-E714-4773-AF45-5FA9FB0BB4AF}.Debug_XboxOne|x64.ActiveCfg = Debug|x64
+		{F3C4507C-E714-4773-AF45-5FA9FB0BB4AF}.Debug_XboxOne|x64.Build.0 = Debug|x64
+		{F3C4507C-E714-4773-AF45-5FA9FB0BB4AF}.Debug|x64.ActiveCfg = Debug|x64
+		{F3C4507C-E714-4773-AF45-5FA9FB0BB4AF}.Debug|x64.Build.0 = Debug|x64
+		{F3C4507C-E714-4773-AF45-5FA9FB0BB4AF}.Release_XboxOne|x64.ActiveCfg = Release|x64
+		{F3C4507C-E714-4773-AF45-5FA9FB0BB4AF}.Release_XboxOne|x64.Build.0 = Release|x64
+		{F3C4507C-E714-4773-AF45-5FA9FB0BB4AF}.Release|x64.ActiveCfg = Release|x64
+		{F3C4507C-E714-4773-AF45-5FA9FB0BB4AF}.Release|x64.Build.0 = Release|x64
+		{30DD3D57-0026-48C8-BFD1-6392F319E23A}.Debug_XboxOne|x64.ActiveCfg = Debug|x64
+		{30DD3D57-0026-48C8-BFD1-6392F319E23A}.Debug_XboxOne|x64.Build.0 = Debug|x64
+		{30DD3D57-0026-48C8-BFD1-6392F319E23A}.Debug|x64.ActiveCfg = Debug|x64
+		{30DD3D57-0026-48C8-BFD1-6392F319E23A}.Debug|x64.Build.0 = Debug|x64
+		{30DD3D57-0026-48C8-BFD1-6392F319E23A}.Release_XboxOne|x64.ActiveCfg = Release|x64
+		{30DD3D57-0026-48C8-BFD1-6392F319E23A}.Release_XboxOne|x64.Build.0 = Release|x64
+		{30DD3D57-0026-48C8-BFD1-6392F319E23A}.Release|x64.ActiveCfg = Release|x64
+		{30DD3D57-0026-48C8-BFD1-6392F319E23A}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F4BE7E97-8876-4A34-834F-4BC918020B57} = {853A0C13-DF96-4CE4-B343-7B41377F0C20}
+		{ADA72694-302E-45F5-AFCA-BB7C56751EEF} = {853A0C13-DF96-4CE4-B343-7B41377F0C20}
+		{339CF6F6-3272-49F6-BF3A-2CEC4685EB8A} = {853A0C13-DF96-4CE4-B343-7B41377F0C20}
+		{F3C4507C-E714-4773-AF45-5FA9FB0BB4AF} = {853A0C13-DF96-4CE4-B343-7B41377F0C20}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {844FB8C0-7412-4E6C-907C-FF982022558A}
+	EndGlobalSection
+EndGlobal
