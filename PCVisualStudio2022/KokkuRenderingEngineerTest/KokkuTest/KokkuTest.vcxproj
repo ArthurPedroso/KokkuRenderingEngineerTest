@@ -17,6 +17,14 @@
   <ItemGroup>
     <ClInclude Include="..\src\KokkuTest\KokkuTestApp.h" />
   </ItemGroup>
+  <ItemGroup>
+    <FSLShader Include="..\src\KokkuTest\Shaders\FSL\basic.frag.fsl" />
+    <FSLShader Include="..\src\KokkuTest\Shaders\FSL\basic.vert.fsl" />
+    <FSLShader Include="..\src\KokkuTest\Shaders\FSL\resources.h.fsl" />
+    <FSLShader Include="..\src\KokkuTest\Shaders\FSL\ShaderList.fsl" />
+    <FSLShader Include="..\src\KokkuTest\Shaders\FSL\skybox.frag.fsl" />
+    <FSLShader Include="..\src\KokkuTest\Shaders\FSL\skybox.vert.fsl" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2BEAF928-8650-4FE8-A54F-DA8B2DE92E1F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
