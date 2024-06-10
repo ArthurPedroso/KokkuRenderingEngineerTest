@@ -84,7 +84,8 @@
       <AdditionalManifestFiles>$(SolutionDir)dpi-aware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
     <PostBuildEvent>
-      <Command>%(Command) set ART=$(ProjectDir)..\..\..\The-Forge\Art\
+      <Command>%(Command) set FORGEART=$(ProjectDir)..\..\..\The-Forge\Art\
+set ART=$(ProjectDir)..\..\..\Art\
 
 xcopy "$(SolutionDir)..\..\The-Forge\Common_3\Graphics\ThirdParty\OpenSource\VulkanSDK\bin\Win32\*.dll" "$(OutDir)" /S /Y /D
 xcopy "$(SolutionDir)..\..\The-Forge\Common_3\Graphics\ThirdParty\OpenSource\VulkanSDK\bin\Win32\*.json" "$(OutDir)" /S /Y /D
@@ -93,15 +94,17 @@ xcopy "$(SolutionDir)..\..\The-Forge\Common_3\Graphics\ThirdParty\OpenSource\Dir
 xcopy "$(SolutionDir)..\..\The-Forge\Common_3\Graphics\ThirdParty\OpenSource\Direct3d12Agility\bin\x64\*.dll" "$(OutDir)"* /S /Y /D
 xcopy "$(SolutionDir)..\..\The-Forge\Common_3\OS\ThirdParty\OpenSource\winpixeventruntime\bin\WinPixEventRuntime.dll" "$(OutDir)WinPixEventRunTime.dll"* /S /Y /D
         
-xcopy /Y /S /D "%ART%\UnitTestResources\Textures\dds\Skybox_*.tex" "$(OutDir)Textures\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Textures\dds\circlepad.tex" "$(OutDir)Textures\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Fonts\*.ttf" "$(OutDir)Fonts\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Fonts\*.otf" "$(OutDir)Fonts\"
+xcopy /Y /S /D "%FORGEART%\UnitTestResources\Textures\dds\Skybox_*.tex" "$(OutDir)Textures\"
+xcopy /Y /S /D "%FORGEART%\UnitTestResources\Textures\dds\circlepad.tex" "$(OutDir)Textures\"
+xcopy /Y /S /D "%FORGEART%\UnitTestResources\Fonts\*.ttf" "$(OutDir)Fonts\"
+xcopy /Y /S /D "%FORGEART%\UnitTestResources\Fonts\*.otf" "$(OutDir)Fonts\"
+xcopy /Y /S /D "%ART%\*.gltf" "$(OutDir)Meshes\"
+xcopy /Y /S /D "%ART%\Tex\*.dds" "$(OutDir)Textures\"
 
 xcopy /Y /S /D /E "$(OutDir)..\OS\Shaders" "$(OutDir)Shaders"
 xcopy /Y /S /D /E "$(OutDir)..\OS\CompiledShaders" "$(OutDir)CompiledShaders"
 
-xcopy /Y /S /D "%ART%\UnitTestResources\Scripts\*.lua" "$(OutDir)Scripts\"
+xcopy /Y /S /D "%FORGEART%\UnitTestResources\Scripts\*.lua" "$(OutDir)Scripts\"
 
 xcopy "$(TheForgeRoot)Common_3\OS\Windows\pc_gpu.data" "$(OutDir)GPUCfg\gpu.data*" /Y /D
 xcopy "$(SolutionDir)\src\$(ProjectName)\GPUCfg\gpu.cfg" "$(OutDir)GPUCfg\gpu.cfg*" /Y /D
@@ -151,7 +154,8 @@ xcopy "$(SolutionDir)\src\$(ProjectName)\GPUCfg\gpu.cfg" "$(OutDir)GPUCfg\gpu.cf
       <AdditionalManifestFiles>$(SolutionDir)dpi-aware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
     <PostBuildEvent>
-      <Command>%(Command) set ART=$(ProjectDir)..\..\..\The-Forge\Art\
+      <Command>%(Command) set FORGEART=$(ProjectDir)..\..\..\The-Forge\Art\
+set ART=$(ProjectDir)..\..\..\Art\
 
 xcopy "$(SolutionDir)..\..\The-Forge\Common_3\Graphics\ThirdParty\OpenSource\VulkanSDK\bin\Win32\*.dll" "$(OutDir)" /S /Y /D
 xcopy "$(SolutionDir)..\..\The-Forge\Common_3\Graphics\ThirdParty\OpenSource\VulkanSDK\bin\Win32\*.json" "$(OutDir)" /S /Y /D
@@ -159,19 +163,22 @@ xcopy "$(SolutionDir)..\..\The-Forge\Common_3\Graphics\ThirdParty\OpenSource\ags
 xcopy "$(SolutionDir)..\..\The-Forge\Common_3\Graphics\ThirdParty\OpenSource\DirectXShaderCompiler\bin\x64\dxcompiler.dll" "$(OutDir)dxcompiler.dll"* /S /Y /D
 xcopy "$(SolutionDir)..\..\The-Forge\Common_3\Graphics\ThirdParty\OpenSource\Direct3d12Agility\bin\x64\*.dll" "$(OutDir)"* /S /Y /D
 xcopy "$(SolutionDir)..\..\The-Forge\Common_3\OS\ThirdParty\OpenSource\winpixeventruntime\bin\WinPixEventRuntime.dll" "$(OutDir)WinPixEventRunTime.dll"* /S /Y /D
-    
-xcopy /Y /S /D "%ART%\UnitTestResources\Textures\dds\Skybox_*.tex" "$(OutDir)Textures\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Textures\dds\circlepad.tex" "$(OutDir)Textures\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Fonts\*.ttf" "$(OutDir)Fonts\"
-xcopy /Y /S /D "%ART%\UnitTestResources\Fonts\*.otf" "$(OutDir)Fonts\"
+        
+xcopy /Y /S /D "%FORGEART%\UnitTestResources\Textures\dds\Skybox_*.tex" "$(OutDir)Textures\"
+xcopy /Y /S /D "%FORGEART%\UnitTestResources\Textures\dds\circlepad.tex" "$(OutDir)Textures\"
+xcopy /Y /S /D "%FORGEART%\UnitTestResources\Fonts\*.ttf" "$(OutDir)Fonts\"
+xcopy /Y /S /D "%FORGEART%\UnitTestResources\Fonts\*.otf" "$(OutDir)Fonts\"
+xcopy /Y /S /D "%ART%\*.gltf" "$(OutDir)Meshes\"
+xcopy /Y /S /D "%ART%\Tex\*.dds" "$(OutDir)Textures\"
 
 xcopy /Y /S /D /E "$(OutDir)..\OS\Shaders" "$(OutDir)Shaders"
 xcopy /Y /S /D /E "$(OutDir)..\OS\CompiledShaders" "$(OutDir)CompiledShaders"
 
-xcopy /Y /S /D "%ART%\UnitTestResources\Scripts\*.lua" "$(OutDir)Scripts\"
+xcopy /Y /S /D "%FORGEART%\UnitTestResources\Scripts\*.lua" "$(OutDir)Scripts\"
 
 xcopy "$(TheForgeRoot)Common_3\OS\Windows\pc_gpu.data" "$(OutDir)GPUCfg\gpu.data*" /Y /D
 xcopy "$(SolutionDir)\src\$(ProjectName)\GPUCfg\gpu.cfg" "$(OutDir)GPUCfg\gpu.cfg*" /Y /D
+
 
 </Command>
     </PostBuildEvent>
