@@ -12,6 +12,7 @@
 #include <Utilities/Interfaces/IFileSystem.h>
 #include <Utilities/Interfaces/ILog.h>
 #include <Utilities/Interfaces/ITime.h>
+#include <Renderer/Interfaces/IVisibilityBuffer.h>
 
 #include <Utilities/RingBuffer.h>
 
@@ -68,10 +69,7 @@ private:
     Semaphore* pImageAcquiredSemaphore = NULL;
 
     Shader* pSphereShader = NULL;
-    Buffer* pSphereVertexBuffer = NULL;
-    Buffer* pSphereIndexBuffer = NULL;
-    uint32_t     gSphereIndexCount = 0;
-    Pipeline* pSpherePipeline = NULL;
+    Pipeline* pCastlePipeline = NULL;
     VertexLayout gSphereVertexLayout = {};
     VertexLayout gCastleVertexLayout = {};
     uint32_t     gSphereLayoutType = 0;
@@ -103,12 +101,17 @@ private:
     uint32_t gFontID = 0;
 
     QueryPool* pPipelineStatsQueryPool[gDataBufferCount] = {};
-    CastleScene castleScene = {};
 
     unsigned char gPipelineStatsCharArray[2048] = {};
     bstring       gPipelineStats = bfromarr(gPipelineStatsCharArray);
 
     FontDrawDesc gFrameTimeDraw;
+
+    CastleScene mCastleScene = {};
+    VBMeshInstance* pVBMeshInstances;
+    Texture** ppDiffuseTexs;
+
+    void setupActions();
     
     bool addSwapChain();
 

@@ -130,6 +130,7 @@ bool KokkuTestApp::Init()
                                 ADDRESS_MODE_CLAMP_TO_EDGE };
     addSampler(pRenderer, &samplerDesc, &pSamplerSkyBox);
 
+    //Skybox VB
     uint64_t       skyBoxDataSize = 4 * 6 * 6 * sizeof(float);
     BufferLoadDesc skyboxVbDesc = {};
     skyboxVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
@@ -215,11 +216,95 @@ bool KokkuTestApp::Init()
     DEFINE_LUA_SCRIPTS(scriptDescs, numScripts);
 
     GeometryLoadDesc sceneLoadDesc = {};
-    castleScene.Load(&sceneLoadDesc, false);
-
+    mCastleScene.Load(&sceneLoadDesc, false);
     waitForAllResourceLoads();
-    
 
+
+    Geometry* geom = mCastleScene.getGeometry();
+    const uint32_t meshCount = geom->mDrawArgCount;
+    pVBMeshInstances = (VBMeshInstance*)tf_calloc(meshCount, sizeof(VBMeshInstance));
+    //gDiffuseMapsStorage = (Texture**)tf_malloc(sizeof(Texture*) * gMaterialCount);
+    //gNormalMapsStorage = (Texture**)tf_malloc(sizeof(Texture*) * gMaterialCount);
+    //gSpecularMapsStorage = (Texture**)tf_malloc(sizeof(Texture*) * gMaterialCount);
+
+    //for (uint32_t i = 0; i < gMaterialCount; ++i)
+    //{
+    //    TextureLoadDesc desc = {};
+    //    desc.pFileName = pScene->textures[i];
+    //    desc.ppTexture = &gDiffuseMapsStorage[i];
+    //    // Textures representing color should be stored in SRGB or HDR format
+    //    desc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    //
+    //    addResource(&desc, &token);
+    //
+    //    TextureLoadDesc descNormal = {};
+    //    descNormal.pFileName = pScene->normalMaps[i];
+    //    descNormal.ppTexture = &gNormalMapsStorage[i];
+    //    addResource(&descNormal, &token);
+    //
+    //    TextureLoadDesc descSpec = {};
+    //    descSpec.pFileName = pScene->specularMaps[i];
+    //    descSpec.ppTexture = &gSpecularMapsStorage[i];
+    //    addResource(&descSpec, &token);
+    //}
+
+    //MeshConstants* meshConstants = (MeshConstants*)tf_malloc(gMeshCount * sizeof(MeshConstants));
+
+    // Calculate mesh constants and filter containers
+    for (uint32_t i = 0; i < meshCount; ++i)
+    {
+        MaterialFlags materialFlag = mCastleScene.getMatFlags()[i];
+        //uint32_t      geomSet = materialFlag & MATERIAL_FLAG_ALPHA_TESTED ? GEOMSET_ALPHA_CUTOUT : GEOMSET_OPAQUE;
+        //visibilityBufferFilteredIndexCount[geomSet] += (pScene->geom->pDrawArgs + i)->mIndexCount;
+        pVBMeshInstances[i].mGeometrySet = materialFlag;
+        pVBMeshInstances[i].mMeshIndex = i;
+        pVBMeshInstances[i].mTriangleCount = (geom->pDrawArgs + i)->mIndexCount / 3;
+        pVBMeshInstances[i].mInstanceIndex = -1; // INSTANCE_INDEX_NONE;
+
+        //meshConstants[i].indexOffset = pSanMiguelModel->pDrawArgs[i].mStartIndex;
+        //meshConstants[i].vertexOffset = pSanMiguelModel->pDrawArgs[i].mVertexOffset;
+        //meshConstants[i].materialID = i;
+        //meshConstants[i].twoSided = (pScene->materialFlags[i] & MATERIAL_FLAG_TWO_SIDED) ? 1 : 0;
+    }
+
+    //BufferLoadDesc meshConstantDesc = {};
+    //meshConstantDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_BUFFER;
+    //meshConstantDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
+    //meshConstantDesc.mDesc.mElementCount = gMeshCount;
+    //meshConstantDesc.mDesc.mStructStride = sizeof(MeshConstants);
+    //meshConstantDesc.mDesc.mSize = meshConstantDesc.mDesc.mElementCount * meshConstantDesc.mDesc.mStructStride;
+    //meshConstantDesc.mDesc.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
+    //meshConstantDesc.ppBuffer = &pBufferMeshConstants;
+    //meshConstantDesc.pData = meshConstants;
+    //meshConstantDesc.mDesc.pName = "Mesh Constant desc";
+    //addResource(&meshConstantDesc, &token);
+
+    //VisibilityBufferDesc vbDesc = {};
+    //vbDesc.mNumFrames = gDataBufferCount;
+    //vbDesc.mNumBuffers = 1; // We don't use Async Compute for triangle filtering, 1 buffer is enough
+    //vbDesc.mNumGeometrySets = NUM_GEOMETRY_SETS;
+    //vbDesc.pMaxIndexCountPerGeomSet = visibilityBufferFilteredIndexCount;
+    //vbDesc.mNumViews = NUM_CULLING_VIEWPORTS;
+    //vbDesc.mComputeThreads = VB_COMPUTE_THREADS;
+    //initVisibilityBuffer(pRenderer, &vbDesc, &pVisibilityBuffer);
+    //
+    //UpdateVBMeshFilterGroupsDesc updateVBMeshFilterGroupsDesc = {};
+    //updateVBMeshFilterGroupsDesc.mNumMeshInstance = gMeshCount;
+    //updateVBMeshFilterGroupsDesc.pVBMeshInstances = pVBMeshInstances;
+    //for (uint32_t i = 0; i < gDataBufferCount; ++i)
+    //{
+    //    updateVBMeshFilterGroupsDesc.mFrameIndex = i;
+    //    gVBPreFilterStats[i] = updateVBMeshFilterGroups(pVisibilityBuffer, &updateVBMeshFilterGroupsDesc);
+    //}
+    //
+    //for (uint32_t frameIdx = 0; frameIdx < gDataBufferCount; ++frameIdx)
+    //{
+    //    gPerFrameData[frameIdx].mDrawCount[GEOMSET_OPAQUE] = gVBPreFilterStats[frameIdx].mGeomsetMaxDrawCounts[GEOMSET_OPAQUE];
+    //    gPerFrameData[frameIdx].mDrawCount[GEOMSET_ALPHA_CUTOUT] =
+    //        gVBPreFilterStats[frameIdx].mGeomsetMaxDrawCounts[GEOMSET_ALPHA_CUTOUT];
+    //}
+    
+    //-----CAMERA-----//
     CameraMotionParameters cmp{ 160.0f, 600.0f, 200.0f };
     vec3                   camPos{ 48.0f, 48.0f, 20.0f };
     vec3                   lookAt{ vec3(0) };
@@ -235,96 +320,8 @@ bool KokkuTestApp::Init()
     if (!initInputSystem(&inputDesc))
         return false;
 
-    // App Actions
-    InputActionDesc actionDesc = { DefaultInputActions::DUMP_PROFILE_DATA,
-                                   [](InputActionContext* ctx)
-                                   {
-                                       dumpProfileData(((Renderer*)ctx->pUserData)->pName);
-                                       return true;
-                                   },
-                                   pRenderer };
-    addInputAction(&actionDesc);
-    actionDesc = { DefaultInputActions::TOGGLE_FULLSCREEN,
-                   [](InputActionContext* ctx)
-                   {
-                       WindowDesc* winDesc = ((IApp*)ctx->pUserData)->pWindow;
-                       if (winDesc->fullScreen)
-                           winDesc->borderlessWindow
-                               ? setBorderless(winDesc, getRectWidth(&winDesc->clientRect), getRectHeight(&winDesc->clientRect))
-                               : setWindowed(winDesc, getRectWidth(&winDesc->clientRect), getRectHeight(&winDesc->clientRect));
-                       else
-                           setFullscreen(winDesc);
-                       return true;
-                   },
-                   this };
-    addInputAction(&actionDesc);
-    actionDesc = { DefaultInputActions::EXIT, [](InputActionContext* ctx)
-                   {
-                       requestShutdown();
-                       return true;
-                   } };
-    addInputAction(&actionDesc);
-    InputActionCallback onAnyInput = [](InputActionContext* ctx)
-    {
-        if (ctx->mActionId > UISystemInputActions::UI_ACTION_START_ID_)
-        {
-            uiOnInput(ctx->mActionId, ctx->mBool, ctx->pPosition, &ctx->mFloat2);
-        }
 
-        return true;
-    };
-
-    //TODO - Check static assignment
-    static ICameraController* pCameraCtrl = pCameraController;
-    typedef bool (*CameraInputHandler)(InputActionContext* ctx, DefaultInputActions::DefaultInputAction action);
-    static CameraInputHandler onCameraInput = [](InputActionContext* ctx, DefaultInputActions::DefaultInputAction action)
-    {
-        if (*(ctx->pCaptured))
-        {
-            float2 delta = uiIsFocused() ? float2(0.f, 0.f) : ctx->mFloat2;
-            switch (action)
-            {
-            case DefaultInputActions::ROTATE_CAMERA:
-                pCameraCtrl->onRotate(delta);
-                break;
-            case DefaultInputActions::TRANSLATE_CAMERA:
-                pCameraCtrl->onMove(delta);
-                break;
-            case DefaultInputActions::TRANSLATE_CAMERA_VERTICAL:
-                pCameraCtrl->onMoveY(delta[0]);
-                break;
-            default:
-                break;
-            }
-        }
-        return true;
-    };
-    actionDesc = { DefaultInputActions::CAPTURE_INPUT,
-                   [](InputActionContext* ctx)
-                   {
-                       setEnableCaptureInput(!uiIsFocused() && INPUT_ACTION_PHASE_CANCELED != ctx->mPhase);
-                       return true;
-                   },
-                   NULL };
-    addInputAction(&actionDesc);
-    actionDesc = { DefaultInputActions::ROTATE_CAMERA,
-                   [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::ROTATE_CAMERA); }, NULL };
-    addInputAction(&actionDesc);
-    actionDesc = { DefaultInputActions::TRANSLATE_CAMERA,
-                   [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::TRANSLATE_CAMERA); }, NULL };
-    addInputAction(&actionDesc);
-    actionDesc = { DefaultInputActions::TRANSLATE_CAMERA_VERTICAL,
-                   [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::TRANSLATE_CAMERA_VERTICAL); }, NULL };
-    addInputAction(&actionDesc);
-    actionDesc = { DefaultInputActions::RESET_CAMERA, [](InputActionContext* ctx)
-                   {
-                       if (!uiWantTextInput())
-                           pCameraCtrl->resetView();
-                       return true;
-                   } };
-    addInputAction(&actionDesc);
-    GlobalInputActionDesc globalInputActionDesc = { GlobalInputActionDesc::ANY_BUTTON_ACTION, onAnyInput, this };
-    setGlobalInputAction(&globalInputActionDesc);
+    setupActions();
 
     gFrameIndex = 0;
 
@@ -344,7 +341,7 @@ void KokkuTestApp::Exit()
     // Exit profile
     exitProfiler();
 
-    castleScene.Unload();
+    mCastleScene.Unload();
 
     for (uint32_t i = 0; i < gDataBufferCount; ++i)
     {
@@ -394,8 +391,8 @@ bool KokkuTestApp::Load(ReloadDesc* pReloadDesc)
 
     if (pReloadDesc->mType & (RELOAD_TYPE_SHADER | RELOAD_TYPE_RENDERTARGET))
     {
-        generate_complex_mesh();
-        //loadCastle();
+        //generate_complex_mesh();
+        loadCastle();
         addPipelines();
     }
 
@@ -430,8 +427,8 @@ void KokkuTestApp::Unload(ReloadDesc* pReloadDesc)
     if (pReloadDesc->mType & (RELOAD_TYPE_SHADER | RELOAD_TYPE_RENDERTARGET))
     {
         removePipelines();
-        removeResource(pSphereVertexBuffer);
-        removeResource(pSphereIndexBuffer);
+        //removeResource(pSphereVertexBuffer);
+        //removeResource(pSphereIndexBuffer);
     }
 
     if (pReloadDesc->mType & (RELOAD_TYPE_RESIZE | RELOAD_TYPE_RENDERTARGET))
@@ -603,24 +600,24 @@ void KokkuTestApp::Draw()
 
     const uint32_t skyboxVbStride = sizeof(float) * 4;
     // draw skybox
-    cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Skybox");
-    cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 1.0f, 1.0f);
-    cmdBindPipeline(cmd, pSkyBoxDrawPipeline);
-    cmdBindDescriptorSet(cmd, 0, pDescriptorSetTexture);
-    cmdBindDescriptorSet(cmd, gFrameIndex * 2 + 0, pDescriptorSetUniforms);
-    cmdBindVertexBuffer(cmd, 1, &pSkyBoxVertexBuffer, &skyboxVbStride, NULL);
-    cmdDraw(cmd, 36, 0);
-    cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
-    cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
-
+    //cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Skybox");
+    //cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 1.0f, 1.0f);
+    //cmdBindPipeline(cmd, pSkyBoxDrawPipeline);
+    //cmdBindDescriptorSet(cmd, 0, pDescriptorSetTexture);
+    //cmdBindDescriptorSet(cmd, gFrameIndex * 2 + 0, pDescriptorSetUniforms);
+    //cmdBindVertexBuffer(cmd, 1, &pSkyBoxVertexBuffer, &skyboxVbStride, NULL);
+    //cmdDraw(cmd, 36, 0);
+    //cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
+    //cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
+    //
     cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Planets");
 
-    cmdBindPipeline(cmd, pSpherePipeline);
+    cmdBindPipeline(cmd, pCastlePipeline);
     cmdBindDescriptorSet(cmd, gFrameIndex * 2 + 1, pDescriptorSetUniforms);
-    cmdBindVertexBuffer(cmd, 1, &pSphereVertexBuffer, &gSphereVertexLayout.mBindings[0].mStride, nullptr);
-    cmdBindIndexBuffer(cmd, pSphereIndexBuffer, INDEX_TYPE_UINT16, 0);
+    cmdBindVertexBuffer(cmd, 1, &mCastleScene.getGeometry()->pVertexBuffers[0] , &mCastleScene.getGeometry()->mVertexStrides[0], nullptr);
+    cmdBindIndexBuffer(cmd, mCastleScene.getGeometry()->pIndexBuffer, INDEX_TYPE_UINT16, 0);
 
-    cmdDrawIndexedInstanced(cmd, gSphereIndexCount, 0, gNumPlanets, 0, 0);
+    cmdDrawIndexedInstanced(cmd, mCastleScene.getGeometry()->mIndexCount, 0, 1, 0, 0);
     cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
     cmdEndGpuTimestampQuery(cmd, gGpuProfileToken); // Draw Skybox/Planets
     cmdBindRenderTargets(cmd, NULL);
@@ -815,7 +812,7 @@ void KokkuTestApp::addPipelines()
     pipelineSettings.pVertexLayout = &gSphereVertexLayout;
     pipelineSettings.pRasterizerState = &sphereRasterizerStateDesc;
     pipelineSettings.mVRFoveatedRendering = true;
-    addPipeline(pRenderer, &desc, &pSpherePipeline);
+    addPipeline(pRenderer, &desc, &pCastlePipeline);
 
     // layout and pipeline for skybox draw
     VertexLayout vertexLayout = {};
@@ -838,7 +835,7 @@ void KokkuTestApp::addPipelines()
 void KokkuTestApp::removePipelines()
 {
     removePipeline(pRenderer, pSkyBoxDrawPipeline);
-    removePipeline(pRenderer, pSpherePipeline);
+    removePipeline(pRenderer, pCastlePipeline);
 }
 
 void KokkuTestApp::prepareDescriptorSets()
@@ -876,121 +873,28 @@ void KokkuTestApp::prepareDescriptorSets()
 
 void KokkuTestApp::loadCastle()
 {
-
-    return;
     gSphereVertexLayout = {};
+    //
+    //void* bufferData = nullptr;
+    //
+    gSphereVertexLayout.mBindingCount = 1;
+    gSphereVertexLayout.mBindings[0].mStride = 12;
+    //size_t vsize = vertexCount * gSphereVertexLayout.mBindings[0].mStride;
+    //
+    add_attribute(&gSphereVertexLayout, SEMANTIC_POSITION, TinyImageFormat_R32G32B32_SFLOAT, 0);
+    //add_attribute(&gSphereVertexLayout, SEMANTIC_NORMAL, TinyImageFormat_R32G32B32_SFLOAT, 16);
+    //add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD1, TinyImageFormat_R32G32B32_SFLOAT, 32);
+    //add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD3, TinyImageFormat_R32G32B32_SFLOAT, 32);
+    //add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD0, TinyImageFormat_R8G8B8A8_UNORM, 12);
+    //add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD2, TinyImageFormat_R8G8B8A8_UNORM, 28);
+    //
+    //copy_attribute(&gSphereVertexLayout, bufferData, 0, 12, vertexCount, verts);
+    //copy_attribute(&gSphereVertexLayout, bufferData, 12, 3, vertexCount, sqColors);
+    //copy_attribute(&gSphereVertexLayout, bufferData, 16, 12, vertexCount, sqNormals);
+    //copy_attribute(&gSphereVertexLayout, bufferData, 28, 3, vertexCount, spColors);
+    //copy_attribute(&gSphereVertexLayout, bufferData, 32, 12, vertexCount, sphNormals);
 
-    // number of vertices on a quad side, must be >= 2
-#define DETAIL_LEVEL 64
-
-    // static here to prevent stack overflow
-    static float verts[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
-    static float sqNormals[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
-    static float sphNormals[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
-
-    for (int i = 0; i < 6; ++i)
-    {
-        for (int x = 0; x < DETAIL_LEVEL; ++x)
-        {
-            for (int y = 0; y < DETAIL_LEVEL; ++y)
-            {
-                float* vert = verts[i][x][y];
-                float* sqNorm = sqNormals[i][x][y];
-
-                sqNorm[0] = 0;
-                sqNorm[1] = 0;
-                sqNorm[2] = 0;
-
-                float fx = 2 * (float(x) / float(DETAIL_LEVEL - 1)) - 1;
-                float fy = 2 * (float(y) / float(DETAIL_LEVEL - 1)) - 1;
-
-                switch (i)
-                {
-                case 0:
-                    vert[0] = -1, vert[1] = fx, vert[2] = fy;
-                    sqNorm[0] = -1;
-                    break;
-                case 1:
-                    vert[0] = 1, vert[1] = -fx, vert[2] = fy;
-                    sqNorm[0] = 1;
-                    break;
-                case 2:
-                    vert[0] = -fx, vert[1] = fy, vert[2] = 1;
-                    sqNorm[2] = 1;
-                    break;
-                case 3:
-                    vert[0] = fx, vert[1] = fy, vert[2] = -1;
-                    sqNorm[2] = -1;
-                    break;
-                case 4:
-                    vert[0] = fx, vert[1] = 1, vert[2] = fy;
-                    sqNorm[1] = 1;
-                    break;
-                case 5:
-                    vert[0] = -fx, vert[1] = -1, vert[2] = fy;
-                    sqNorm[1] = -1;
-                    break;
-                }
-
-                compute_normal(vert, sphNormals[i][x][y]);
-            }
-        }
-    }
-
-    static uint8_t sqColors[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
-    static uint8_t spColors[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
-    for (int i = 0; i < 6; ++i)
-    {
-        for (int x = 0; x < DETAIL_LEVEL; ++x)
-        {
-            uint8_t spColorTemplate[3] = {
-                uint8_t(randomInt(0, 256)),
-                uint8_t(randomInt(0, 256)),
-                uint8_t(randomInt(0, 256)),
-            };
-
-            float rx = 1 - abs((float(x) / DETAIL_LEVEL) * 2 - 1);
-
-            for (int y = 0; y < DETAIL_LEVEL; ++y)
-            {
-                float    ry = 1 - abs((float(y) / DETAIL_LEVEL) * 2 - 1);
-                uint32_t close_ratio = uint32_t(rx * ry * 255);
-
-                uint8_t* sq_color = sqColors[i][x][y];
-                uint8_t* sp_color = spColors[i][x][y];
-
-                sq_color[0] = (randomInt(0, 256) * close_ratio) / 255;
-                sq_color[1] = (randomInt(0, 256) * close_ratio) / 255;
-                sq_color[2] = (randomInt(0, 256) * close_ratio) / 255;
-
-                sp_color[0] = (spColorTemplate[0] * close_ratio) / 255;
-                sp_color[1] = (spColorTemplate[1] * close_ratio) / 255;
-                sp_color[2] = (spColorTemplate[2] * close_ratio) / 255;
-            }
-        }
-    }
-
-    static uint16_t indices[6][DETAIL_LEVEL - 1][DETAIL_LEVEL - 1][6];
-    for (int i = 0; i < 6; ++i)
-    {
-        uint32_t o = DETAIL_LEVEL * DETAIL_LEVEL * i;
-        for (int x = 0; x < DETAIL_LEVEL - 1; ++x)
-        {
-            for (int y = 0; y < DETAIL_LEVEL - 1; ++y)
-            {
-                uint16_t* quadIndices = indices[i][x][y];
-
-#define vid(vx, vy) (o + (vx)*DETAIL_LEVEL + (vy))
-                quadIndices[0] = vid(x, y);
-                quadIndices[1] = vid(x, y + 1);
-                quadIndices[2] = vid(x + 1, y + 1);
-                quadIndices[3] = vid(x + 1, y + 1);
-                quadIndices[4] = vid(x + 1, y);
-                quadIndices[5] = vid(x, y);
-#undef vid
-            }
-        }
-    }
+    waitForAllResourceLoads();
 }
 
 void KokkuTestApp::add_attribute(VertexLayout* layout, ShaderSemantic semantic, TinyImageFormat format, uint32_t offset)
@@ -1038,6 +942,7 @@ void KokkuTestApp::compute_normal(const float* src, float* dst)
 
 void KokkuTestApp::generate_complex_mesh()
 {
+    /*
     gSphereVertexLayout = {};
 
     // number of vertices on a quad side, must be >= 2
@@ -1242,5 +1147,100 @@ void KokkuTestApp::generate_complex_mesh()
     waitForAllResourceLoads();
 
     tf_free(bufferData);
+    */
+}
+
+void KokkuTestApp::setupActions()
+{
+
+    // App Actions
+    InputActionDesc actionDesc = { DefaultInputActions::DUMP_PROFILE_DATA,
+                                   [](InputActionContext* ctx)
+                                   {
+                                       dumpProfileData(((Renderer*)ctx->pUserData)->pName);
+                                       return true;
+                                   },
+                                   pRenderer };
+    addInputAction(&actionDesc);
+    actionDesc = { DefaultInputActions::TOGGLE_FULLSCREEN,
+                   [](InputActionContext* ctx)
+                   {
+                       WindowDesc* winDesc = ((IApp*)ctx->pUserData)->pWindow;
+                       if (winDesc->fullScreen)
+                           winDesc->borderlessWindow
+                               ? setBorderless(winDesc, getRectWidth(&winDesc->clientRect), getRectHeight(&winDesc->clientRect))
+                               : setWindowed(winDesc, getRectWidth(&winDesc->clientRect), getRectHeight(&winDesc->clientRect));
+                       else
+                           setFullscreen(winDesc);
+                       return true;
+                   },
+                   this };
+    addInputAction(&actionDesc);
+    actionDesc = { DefaultInputActions::EXIT, [](InputActionContext* ctx)
+                   {
+                       requestShutdown();
+                       return true;
+                   } };
+    addInputAction(&actionDesc);
+    InputActionCallback onAnyInput = [](InputActionContext* ctx)
+    {
+        if (ctx->mActionId > UISystemInputActions::UI_ACTION_START_ID_)
+        {
+            uiOnInput(ctx->mActionId, ctx->mBool, ctx->pPosition, &ctx->mFloat2);
+        }
+
+        return true;
+    };
+    //TODO - Check static assignment
+    static ICameraController* pCameraCtrl = pCameraController;
+    typedef bool (*CameraInputHandler)(InputActionContext* ctx, DefaultInputActions::DefaultInputAction action);
+    static CameraInputHandler onCameraInput = [](InputActionContext* ctx, DefaultInputActions::DefaultInputAction action)
+    {
+        if (*(ctx->pCaptured))
+        {
+            float2 delta = uiIsFocused() ? float2(0.f, 0.f) : ctx->mFloat2;
+            switch (action)
+            {
+            case DefaultInputActions::ROTATE_CAMERA:
+                pCameraCtrl->onRotate(delta);
+                break;
+            case DefaultInputActions::TRANSLATE_CAMERA:
+                pCameraCtrl->onMove(delta);
+                break;
+            case DefaultInputActions::TRANSLATE_CAMERA_VERTICAL:
+                pCameraCtrl->onMoveY(delta[0]);
+                break;
+            default:
+                break;
+            }
+        }
+        return true;
+    };
+    actionDesc = { DefaultInputActions::CAPTURE_INPUT,
+                   [](InputActionContext* ctx)
+                   {
+                       setEnableCaptureInput(!uiIsFocused() && INPUT_ACTION_PHASE_CANCELED != ctx->mPhase);
+                       return true;
+                   },
+                   NULL };
+    addInputAction(&actionDesc);
+    actionDesc = { DefaultInputActions::ROTATE_CAMERA,
+                   [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::ROTATE_CAMERA); }, NULL };
+    addInputAction(&actionDesc);
+    actionDesc = { DefaultInputActions::TRANSLATE_CAMERA,
+                   [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::TRANSLATE_CAMERA); }, NULL };
+    addInputAction(&actionDesc);
+    actionDesc = { DefaultInputActions::TRANSLATE_CAMERA_VERTICAL,
+                   [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::TRANSLATE_CAMERA_VERTICAL); }, NULL };
+    addInputAction(&actionDesc);
+    actionDesc = { DefaultInputActions::RESET_CAMERA, [](InputActionContext* ctx)
+                   {
+                       if (!uiWantTextInput())
+                           pCameraCtrl->resetView();
+                       return true;
+                   } };
+    addInputAction(&actionDesc);
+    GlobalInputActionDesc globalInputActionDesc = { GlobalInputActionDesc::ANY_BUTTON_ACTION, onAnyInput, this };
+    setGlobalInputAction(&globalInputActionDesc);
 }
 

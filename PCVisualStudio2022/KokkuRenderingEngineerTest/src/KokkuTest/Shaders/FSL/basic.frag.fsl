@@ -34,5 +34,6 @@ STRUCT(VSOutput)
 float4 PS_MAIN( VSOutput In )
 {
     INIT_MAIN;
+    In.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
     RETURN(In.Color);
 }

@@ -32,6 +32,9 @@ private:
     void SetMaterials(bool transparentFlags);
 
 public:
+    Geometry* getGeometry() { return geom; }
+    MaterialFlags* getMatFlags() { return materialFlags; }
+
     void createCubeBuffers(Renderer* pRenderer, Buffer** outVertexBuffer, Buffer** outIndexBuffer);
     void Load(const GeometryLoadDesc* pTemplate, bool transparentFlags);
     void Unload();

@@ -76,5 +76,6 @@ float4 PS_MAIN( VSOutput In )
         newtextcoord = float2(newtextcoord.x, newtextcoord.y);
         Out = SampleTex2D(Get(TopText), Get(uSampler0), newtextcoord);
     }
+    //Out = float4(1.0f, 1.0f, 1.0f, 1.0f);
     RETURN(Out);
 }
