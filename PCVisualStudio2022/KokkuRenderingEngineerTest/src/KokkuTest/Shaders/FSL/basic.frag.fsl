@@ -41,30 +41,59 @@ STRUCT(VSOutput)
 	DATA(float2, uv,	 TEXCOORD0);
 };
 
+float3 BumpNormal(float3 _normal, float _bumpVal) {
+    // Calculate tangent and bitangent vectors
+    float3 tangent = normalize(cross(_normal, float3(0.0, 1.0, 0.0)));
+    float3 bitangent = cross(_normal, tangent);
+
+    // Perturb the normal
+    _normal += tangent * (_bumpVal - 0.5) * 2.0;
+    _normal += bitangent * (_bumpVal - 0.5) * 2.0;
+
+    return normalize(_normal);
+}
+
 float4 PS_MAIN(VSOutput In, SV_PrimitiveID(uint) primitiveID)
 {
     INIT_MAIN;
 
     float4 result;
-    //In.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
-    result = float4(0.0, 0.0, 0.0, 1.0);//float4(result.xyz, 1.0f);
+    float4 albedoColor;
+    float bumpValue;
+    float lightIntensity = 0.05;
+
+    float3 lightPos = normalize(float3(-0.5, -0.5, -0.5));
+
+    float3 bumpNormal;
+    float lightIncidence;
+
+    float3 lightColor = float3(1.0, 1.0, 1.0) * lightIntensity;
 
     if(primitiveID < Get(submeshSizes)[0])
     {
-        result.x = SampleTex2D(Get(Albedo1), Get(uSampler1), In.uv).x;        
+        albedoColor = SampleTex2D(Get(Albedo1), Get(uSampler1), In.uv);      
+        bumpValue = SampleTex2D(Get(Bump1), Get(uSampler1), In.uv).r;  
     }
     else if(primitiveID < Get(submeshSizes)[1])
     {
-        result.y = SampleTex2D(Get(Albedo2), Get(uSampler1), In.uv).y;         
+        albedoColor = SampleTex2D(Get(Albedo2), Get(uSampler1), In.uv); 
+        bumpValue = SampleTex2D(Get(Bump2), Get(uSampler1), In.uv).r;       
     }
     else if(primitiveID < Get(submeshSizes)[2])
     {
-        result.z = SampleTex2D(Get(Albedo3), Get(uSampler1), In.uv).z;  
+        albedoColor = SampleTex2D(Get(Albedo3), Get(uSampler1), In.uv);  
+        bumpValue = SampleTex2D(Get(Bump3), Get(uSampler1), In.uv).r;
     }
     else
     {
-        result.y = SampleTex2D(Get(Albedo2), Get(uSampler1), In.uv).y;  
+        albedoColor = SampleTex2D(Get(Albedo2), Get(uSampler1), In.uv);  
+        bumpValue = SampleTex2D(Get(Bump1), Get(uSampler1), In.uv).r;
     }
+
+    bumpNormal = BumpNormal(normalize(In.Normal), bumpValue);
+    lightIncidence = max(dot(bumpNormal, lightPos), 0.0);
+
+    result = albedoColor + float4((lightColor * lightIncidence * lightIncidence), 1.0);
 
     RETURN(result);
 }
