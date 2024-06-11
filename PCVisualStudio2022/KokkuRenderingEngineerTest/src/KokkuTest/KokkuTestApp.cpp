@@ -357,7 +357,7 @@ void KokkuTestApp::Update(float deltaTime)
     gUniformData.mProjectView = projMat * viewMat;
 
     // point light parameters
-    gUniformData.mLightPosition = vec3(0, 0, 0);
+    gUniformData.mLightPosition = vec3(0.5f, 0.5f, 0.5f);
     gUniformData.mLightColor = vec3(0.9f, 0.9f, 0.7f); // Pale Yellow
 
     // update transformations

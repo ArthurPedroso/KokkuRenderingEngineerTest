@@ -52,21 +52,25 @@ float3 BumpNormal(float3 _normal, float _bumpVal) {
     return normalize(_normal);
 }
 
-float4 PS_MAIN(VSOutput In, SV_PrimitiveID(uint) primitiveID)
+float4 PS_MAIN(VSOutput In, SV_PrimitiveID(uint) primitiveID, SV_IsFrontFace(bool) frontFacing)
 {
     INIT_MAIN;
 
+    float3 normal;
     float4 result;
     float4 albedoColor;
+    float ambientIntensity = 0.1;
+    float lightIntensity = 0.5;
     float bumpValue;
-    float lightIntensity = 0.05;
 
-    float3 lightPos = normalize(float3(-0.5, -0.5, -0.5));
+    float3 lPos = -normalize(Get(lightPosition));
+    float3 lColor = Get(lightColor);
 
     float3 bumpNormal;
     float lightIncidence;
 
-    float3 lightColor = float3(1.0, 1.0, 1.0) * lightIntensity;
+    normal = In.Normal;
+    if(frontFacing) normal = -normal;
 
     if(primitiveID < Get(submeshSizes)[0])
     {
@@ -89,10 +93,12 @@ float4 PS_MAIN(VSOutput In, SV_PrimitiveID(uint) primitiveID)
         bumpValue = SampleTex2D(Get(Bump1), Get(uSampler1), In.uv).r;
     }
 
-    bumpNormal = BumpNormal(normalize(In.Normal), bumpValue);
-    lightIncidence = max(dot(bumpNormal, lightPos), 0.0);
+    bumpNormal = BumpNormal(normalize(normal), bumpValue);
+    lightIncidence = max(dot(bumpNormal, lPos), 0.0);
 
-    result = albedoColor + float4((lightColor * lightIncidence * lightIncidence), 1.0);
+    lColor = ((albedoColor.xyz * lColor) * lightIntensity) * lightIncidence;
+
+    result = float4((albedoColor.xyz * ambientIntensity) + (lColor), 1.0);
 
     RETURN(result);
 }
