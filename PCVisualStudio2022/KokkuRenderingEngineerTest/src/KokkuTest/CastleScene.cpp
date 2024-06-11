@@ -6,6 +6,7 @@
 #define DEFAULT_SPEC             "Default_SPEC"
 #define DEFAULT_SPEC_TRANSPARENT "Default_SPEC_TRANS"
 
+/* TODO RM
 void CastleScene::setTextures(int index, const char* albedo, const char* specular, const char* normal, uint32_t matFlags)
 {
     materialFlags[index] = matFlags;
@@ -31,7 +32,7 @@ void CastleScene::SetMaterials(bool transparentFlags)
 
     //setTextures(index++, "ForgeFlags", DEFAULT_SPEC, DEFAULT_NORMAL, MATERIAL_FLAG_TWO_SIDED | MATERIAL_FLAG_ALPHA_TESTED);
 }
-
+*/
 void CastleScene::createCubeBuffers(Renderer* pRenderer, Buffer** outVertexBuffer, Buffer** outIndexBuffer)
 {
     UNREF_PARAM(pRenderer);
@@ -95,40 +96,8 @@ void CastleScene::Load(const GeometryLoadDesc* pTemplate, bool transparentFlags)
     //waitForToken(&token);
     waitForAllResourceLoads();
 
-    materialCount = geom->mDrawArgCount;
-    materialFlags = (MaterialFlags*)tf_calloc(geom->mDrawArgCount, sizeof(MaterialFlags));
-    textures = (char**)tf_calloc(geom->mDrawArgCount, sizeof(char*));
-    normalMaps = (char**)tf_calloc(geom->mDrawArgCount, sizeof(char*));
-    specularMaps = (char**)tf_calloc(geom->mDrawArgCount, sizeof(char*));
-
-    SetMaterials(transparentFlags);
 }
 
 void CastleScene::Unload()
 {
-    for (uint32_t i = 0; i < materialCount; ++i)
-    {
-        if (textures[i])
-        {
-            tf_free(textures[i]);
-            textures[i] = NULL;
-        }
-
-        if (normalMaps[i])
-        {
-            tf_free(normalMaps[i]);
-            normalMaps[i] = NULL;
-        }
-
-        if (specularMaps[i])
-        {
-            tf_free(specularMaps[i]);
-            specularMaps[i] = NULL;
-        }
-    }
-
-    tf_free(textures);
-    tf_free(normalMaps);
-    tf_free(specularMaps);
-    tf_free(materialFlags);
 }

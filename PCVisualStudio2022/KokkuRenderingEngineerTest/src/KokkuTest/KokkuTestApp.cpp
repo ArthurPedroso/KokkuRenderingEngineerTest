@@ -235,9 +235,9 @@ bool KokkuTestApp::Init()
     waitForAllResourceLoads();
 
 
-    Geometry* geom = mCastleScene.getGeometry();
-    const uint32_t meshCount = geom->mDrawArgCount;
-    pVBMeshInstances = (VBMeshInstance*)tf_calloc(meshCount, sizeof(VBMeshInstance));
+    //Geometry* geom = mCastleScene.getGeometry();
+    //const uint32_t meshCount = geom->mDrawArgCount;
+    //pVBMeshInstances = (VBMeshInstance*)tf_calloc(meshCount, sizeof(VBMeshInstance));
     //gDiffuseMapsStorage = (Texture**)tf_malloc(sizeof(Texture*) * gMaterialCount);
     //gNormalMapsStorage = (Texture**)tf_malloc(sizeof(Texture*) * gMaterialCount);
     //gSpecularMapsStorage = (Texture**)tf_malloc(sizeof(Texture*) * gMaterialCount);
@@ -266,21 +266,21 @@ bool KokkuTestApp::Init()
     //MeshConstants* meshConstants = (MeshConstants*)tf_malloc(gMeshCount * sizeof(MeshConstants));
 
     // Calculate mesh constants and filter containers
-    for (uint32_t i = 0; i < meshCount; ++i)
-    {
-        MaterialFlags materialFlag = mCastleScene.getMatFlags()[i];
-        //uint32_t      geomSet = materialFlag & MATERIAL_FLAG_ALPHA_TESTED ? GEOMSET_ALPHA_CUTOUT : GEOMSET_OPAQUE;
-        //visibilityBufferFilteredIndexCount[geomSet] += (pScene->geom->pDrawArgs + i)->mIndexCount;
-        pVBMeshInstances[i].mGeometrySet = materialFlag;
-        pVBMeshInstances[i].mMeshIndex = i;
-        pVBMeshInstances[i].mTriangleCount = (geom->pDrawArgs + i)->mIndexCount / 3;
-        pVBMeshInstances[i].mInstanceIndex = -1; // INSTANCE_INDEX_NONE;
-
-        //meshConstants[i].indexOffset = pSanMiguelModel->pDrawArgs[i].mStartIndex;
-        //meshConstants[i].vertexOffset = pSanMiguelModel->pDrawArgs[i].mVertexOffset;
-        //meshConstants[i].materialID = i;
-        //meshConstants[i].twoSided = (pScene->materialFlags[i] & MATERIAL_FLAG_TWO_SIDED) ? 1 : 0;
-    }
+    //for (uint32_t i = 0; i < meshCount; ++i)
+    //{
+    //    MaterialFlags materialFlag = mCastleScene.getMatFlags()[i];
+    //    //uint32_t      geomSet = materialFlag & MATERIAL_FLAG_ALPHA_TESTED ? GEOMSET_ALPHA_CUTOUT : GEOMSET_OPAQUE;
+    //    //visibilityBufferFilteredIndexCount[geomSet] += (pScene->geom->pDrawArgs + i)->mIndexCount;
+    //    pVBMeshInstances[i].mGeometrySet = materialFlag;
+    //    pVBMeshInstances[i].mMeshIndex = i;
+    //    pVBMeshInstances[i].mTriangleCount = (geom->pDrawArgs + i)->mIndexCount / 3;
+    //    pVBMeshInstances[i].mInstanceIndex = -1; // INSTANCE_INDEX_NONE;
+    //
+    //    //meshConstants[i].indexOffset = pSanMiguelModel->pDrawArgs[i].mStartIndex;
+    //    //meshConstants[i].vertexOffset = pSanMiguelModel->pDrawArgs[i].mVertexOffset;
+    //    //meshConstants[i].materialID = i;
+    //    //meshConstants[i].twoSided = (pScene->materialFlags[i] & MATERIAL_FLAG_TWO_SIDED) ? 1 : 0;
+    //}
 
     //BufferLoadDesc meshConstantDesc = {};
     //meshConstantDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_BUFFER;
@@ -804,7 +804,7 @@ void KokkuTestApp::addPipelines()
     rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
 
     RasterizerStateDesc sphereRasterizerStateDesc = {};
-    sphereRasterizerStateDesc.mCullMode = CULL_MODE_FRONT;
+    sphereRasterizerStateDesc.mCullMode = CULL_MODE_NONE;
 
     DepthStateDesc depthStateDesc = {};
     depthStateDesc.mDepthTest = true;
