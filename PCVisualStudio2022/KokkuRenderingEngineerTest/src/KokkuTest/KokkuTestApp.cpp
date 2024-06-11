@@ -215,6 +215,21 @@ bool KokkuTestApp::Init()
         scriptDescs[i].pScriptFileName = gWindowTestScripts[i];
     DEFINE_LUA_SCRIPTS(scriptDescs, numScripts);
 
+    samplerDesc = { FILTER_LINEAR,
+                                FILTER_LINEAR,
+                                MIPMAP_MODE_NEAREST,
+                                ADDRESS_MODE_CLAMP_TO_EDGE,
+                                ADDRESS_MODE_CLAMP_TO_EDGE,
+                                ADDRESS_MODE_CLAMP_TO_EDGE };
+    addSampler(pRenderer, &samplerDesc, &pSmaplerCastle);
+
+    TextureLoadDesc textureDesc = {};
+    textureDesc.pFileName = "Castle Exterior Texture.dds";
+    textureDesc.ppTexture = &pCastleAlbedo;
+    // Textures representing color should be stored in SRGB or HDR format
+    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&textureDesc, NULL);
+
     GeometryLoadDesc sceneLoadDesc = {};
     mCastleScene.Load(&sceneLoadDesc, false);
     waitForAllResourceLoads();
@@ -358,7 +373,10 @@ void KokkuTestApp::Exit()
     for (uint i = 0; i < 6; ++i)
         removeResource(pSkyBoxTextures[i]);
 
+    removeResource(pCastleAlbedo);
+
     removeSampler(pRenderer, pSamplerSkyBox);
+    removeSampler(pRenderer, pSmaplerCastle);
 
     removeGpuCmdRing(pRenderer, &gGraphicsCmdRing);
     removeSemaphore(pRenderer, pImageAcquiredSemaphore);
@@ -471,11 +489,9 @@ void KokkuTestApp::Update(float deltaTime)
     gUniformData.mLightColor = vec3(0.9f, 0.9f, 0.7f); // Pale Yellow
 
     // update planet transformations
-    for (unsigned int i = 0; i < gNumPlanets; i++)
-    {
-        mat4 trans, scale, parentMat;
-        parentMat = mat4::identity();
-        //if (gPlanetInfoData[i].mRotationSpeed > 0.0f)
+    mat4 trans, scale;
+    trans = mat4::identity();
+    //if (gPlanetInfoData[i].mRotationSpeed > 0.0f)
         //    rotSelf = mat4::rotationY(gRotSelfScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mRotationSpeed);
         //if (gPlanetInfoData[i].mYOrbitSpeed > 0.0f)
         //    rotOrbitY = mat4::rotationY(gRotOrbitYScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mYOrbitSpeed);
@@ -483,27 +499,24 @@ void KokkuTestApp::Update(float deltaTime)
         //    rotOrbitZ = mat4::rotationZ(gRotOrbitZScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mZOrbitSpeed);
         //if (gPlanetInfoData[i].mParentIndex > 0)
         //    parentMat = gPlanetInfoData[gPlanetInfoData[i].mParentIndex].mSharedMat;
+    scale = mat4::identity();
 
-        trans = gPlanetInfoData[i].mTranslationMat;
-        scale = gPlanetInfoData[i].mScaleMat;
+    scale[0][0] *= 100;
+    scale[1][1] *= 100;
+    scale[2][2] *= 100;
 
-        scale[0][0] /= 2;
-        scale[1][1] /= 2;
-        scale[2][2] /= 2;
+    //gPlanetInfoData[i].mSharedMat = parentMat * rotOrbitY * trans;
+    gUniformData.mToWorldMat = trans * scale;
+    //gUniformData.mColor = gPlanetInfoData[i].mColor;
 
-        //gPlanetInfoData[i].mSharedMat = parentMat * rotOrbitY * trans;
-        gUniformData.mToWorldMat = parentMat * trans * scale;
-        gUniformData.mColor = gPlanetInfoData[i].mColor;
-
-        //float step;
-        //float phase = modf(currentTime * gPlanetInfoData[i].mMorphingSpeed / 2000.f, &step);
-        //if (phase > 0.5f)
-        //    phase = 2 - phase * 2;
-        //else
-        //    phase = phase * 2;
+    //float step;
+    //float phase = modf(currentTime * gPlanetInfoData[i].mMorphingSpeed / 2000.f, &step);
+    //if (phase > 0.5f)
+    //    phase = 2 - phase * 2;
+    //else
+    //    phase = phase * 2;
 
         //gUniformData.mGeometryWeight[i][0] = phase;
-    }
 
     viewMat.setTranslation(vec3(0));
     gUniformDataSky = {};
@@ -613,8 +626,9 @@ void KokkuTestApp::Draw()
     cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Planets");
 
     cmdBindPipeline(cmd, pCastlePipeline);
+    cmdBindDescriptorSet(cmd, 0, pDescriptorSetTexture);
     cmdBindDescriptorSet(cmd, gFrameIndex * 2 + 1, pDescriptorSetUniforms);
-    cmdBindVertexBuffer(cmd, 1, &mCastleScene.getGeometry()->pVertexBuffers[0] , &mCastleScene.getGeometry()->mVertexStrides[0], nullptr);
+    cmdBindVertexBuffer(cmd, 3, mCastleScene.getGeometry()->pVertexBuffers, mCastleScene.getGeometry()->mVertexStrides, nullptr);
     cmdBindIndexBuffer(cmd, mCastleScene.getGeometry()->pIndexBuffer, INDEX_TYPE_UINT16, 0);
 
     cmdDrawIndexedInstanced(cmd, mCastleScene.getGeometry()->mIndexCount, 0, 1, 0, 0);
@@ -841,7 +855,7 @@ void KokkuTestApp::removePipelines()
 void KokkuTestApp::prepareDescriptorSets()
 {
     // Prepare descriptor sets
-    DescriptorData params[7] = {};
+    DescriptorData params[9] = {};
     params[0].pName = "RightText";
     params[0].ppTextures = &pSkyBoxTextures[0];
     params[1].pName = "LeftText";
@@ -856,7 +870,11 @@ void KokkuTestApp::prepareDescriptorSets()
     params[5].ppTextures = &pSkyBoxTextures[5];
     params[6].pName = "uSampler0";
     params[6].ppSamplers = &pSamplerSkyBox;
-    updateDescriptorSet(pRenderer, 0, pDescriptorSetTexture, 7, params);
+    params[7].pName = "Albedo";
+    params[7].ppTextures = &pCastleAlbedo;
+    params[8].pName = "uSampler1";
+    params[8].ppSamplers = &pSmaplerCastle;
+    updateDescriptorSet(pRenderer, 0, pDescriptorSetTexture, 9, params);
 
     for (uint32_t i = 0; i < gDataBufferCount; ++i)
     {
@@ -874,14 +892,29 @@ void KokkuTestApp::prepareDescriptorSets()
 void KokkuTestApp::loadCastle()
 {
     gSphereVertexLayout = {};
+    gSphereVertexLayout.mAttribCount = 3;
+    gSphereVertexLayout.mBindingCount = 3;
+    gSphereVertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
+    gSphereVertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
+    gSphereVertexLayout.mAttribs[0].mBinding = 0;
+    gSphereVertexLayout.mAttribs[0].mLocation = 0;
+    gSphereVertexLayout.mAttribs[1].mSemantic = SEMANTIC_NORMAL;
+    gSphereVertexLayout.mAttribs[1].mFormat = TinyImageFormat_R16G16_UNORM;
+    gSphereVertexLayout.mAttribs[1].mBinding = 1;
+    gSphereVertexLayout.mAttribs[1].mLocation = 1;
+    gSphereVertexLayout.mAttribs[2].mSemantic = SEMANTIC_TEXCOORD0;
+    gSphereVertexLayout.mAttribs[2].mFormat = TinyImageFormat_R16G16_SFLOAT;
+    gSphereVertexLayout.mAttribs[2].mBinding = 2;
+    gSphereVertexLayout.mAttribs[2].mLocation = 2;
+    //gSphereVertexLayout = {};
     //
     //void* bufferData = nullptr;
     //
-    gSphereVertexLayout.mBindingCount = 1;
-    gSphereVertexLayout.mBindings[0].mStride = 12;
+    //gSphereVertexLayout.mBindingCount = 1;
+    //gSphereVertexLayout.mBindings[0].mStride = 12;
     //size_t vsize = vertexCount * gSphereVertexLayout.mBindings[0].mStride;
     //
-    add_attribute(&gSphereVertexLayout, SEMANTIC_POSITION, TinyImageFormat_R32G32B32_SFLOAT, 0);
+    //add_attribute(&gSphereVertexLayout, SEMANTIC_POSITION, TinyImageFormat_R32G32B32_SFLOAT, 0);
     //add_attribute(&gSphereVertexLayout, SEMANTIC_NORMAL, TinyImageFormat_R32G32B32_SFLOAT, 16);
     //add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD1, TinyImageFormat_R32G32B32_SFLOAT, 32);
     //add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD3, TinyImageFormat_R32G32B32_SFLOAT, 32);
@@ -894,7 +927,7 @@ void KokkuTestApp::loadCastle()
     //copy_attribute(&gSphereVertexLayout, bufferData, 28, 3, vertexCount, spColors);
     //copy_attribute(&gSphereVertexLayout, bufferData, 32, 12, vertexCount, sphNormals);
 
-    waitForAllResourceLoads();
+    //waitForAllResourceLoads();
 }
 
 void KokkuTestApp::add_attribute(VertexLayout* layout, ShaderSemantic semantic, TinyImageFormat format, uint32_t offset)

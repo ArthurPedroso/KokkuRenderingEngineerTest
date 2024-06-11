@@ -79,6 +79,9 @@ private:
     Pipeline* pSkyBoxDrawPipeline = NULL;
     RootSignature* pRootSignature = NULL;
     Sampler* pSamplerSkyBox = NULL;
+    Sampler* pSmaplerCastle = NULL;
+    Texture* pCastleAlbedo = NULL;
+    Texture* pCastleBump = NULL;
     Texture* pSkyBoxTextures[6];
     DescriptorSet* pDescriptorSetTexture = { NULL };
     DescriptorSet* pDescriptorSetUniforms = { NULL };
