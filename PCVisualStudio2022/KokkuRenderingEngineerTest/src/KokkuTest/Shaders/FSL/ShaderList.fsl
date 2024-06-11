@@ -1,8 +1,8 @@
-#frag basic.frag
+#frag FT_PRIM_ID basic.frag
 #include "basic.frag.fsl"
 #end
 
-#vert FT_MULTIVIEW basic.vert
+#vert basic.vert
 #include "basic.vert.fsl"
 #end
 

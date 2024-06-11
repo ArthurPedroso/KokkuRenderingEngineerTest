@@ -44,6 +44,8 @@ private:
         // Point Light Information
         vec3 mLightPosition;
         vec3 mLightColor;
+
+        uint32_t mSubmeshCount;
     };
 
     struct UniformBlockSky
@@ -80,10 +82,11 @@ private:
     RootSignature* pRootSignature = NULL;
     Sampler* pSamplerSkyBox = NULL;
     Sampler* pSmaplerCastle = NULL;
-    Texture* pCastleAlbedo = NULL;
-    Texture* pCastleBump = NULL;
+    Texture* pCastleAlbedo;
+    Texture* pCastleBump;
     Texture* pSkyBoxTextures[6];
     DescriptorSet* pDescriptorSetTexture = { NULL };
+    DescriptorSet* pDescriptorConstCastle = { NULL };
     DescriptorSet* pDescriptorSetUniforms = { NULL };
 
     Buffer* pProjViewUniformBuffer[gDataBufferCount] = { NULL };
@@ -111,6 +114,7 @@ private:
     FontDrawDesc gFrameTimeDraw;
 
     CastleScene mCastleScene = {};
+    Buffer* pSubmeshSizes = NULL;
     VBMeshInstance* pVBMeshInstances;
     Texture** ppDiffuseTexs;
 

@@ -62,7 +62,7 @@ const float gSkyBoxPoints[] = {
 const char* gWindowTestScripts[] = { "TestFullScreen.lua", "TestCenteredWindow.lua", "TestNonCenteredWindow.lua", "TestBorderless.lua" };
 
 bool KokkuTestApp::Init()
-{ 
+{
     // FILE PATHS
     fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_BINARIES, "CompiledShaders");
     fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_TEXTURES, "Textures");
@@ -197,7 +197,7 @@ bool KokkuTestApp::Init()
     UIWidget* pVLw = uiCreateComponentWidget(pGuiWindow, "Vertex Layout", &vertexLayoutWidget, WIDGET_TYPE_SLIDER_UINT);
     uiSetWidgetOnEditedCallback(pVLw, nullptr, [](void*) -> void {
         ReloadDesc reload{ RELOAD_TYPE_SHADER };
-        requestReload(&reload); 
+        requestReload(&reload);
         });
 
     if (pRenderer->pGpu->mSettings.mPipelineStatsQueries)
@@ -232,6 +232,31 @@ bool KokkuTestApp::Init()
 
     GeometryLoadDesc sceneLoadDesc = {};
     mCastleScene.Load(&sceneLoadDesc, false);
+
+    uint32_t numSubmeshes = mCastleScene.getGeometry()->mDrawArgCount;
+    const uint32_t maxSubmeshes = 256;
+    uint32_t subMeshSizes[maxSubmeshes];
+    uint32_t temp = 0;
+    for (uint32_t i = 0; i < numSubmeshes && i < maxSubmeshes; i++)
+    {
+        temp += mCastleScene.getGeometry()->pDrawArgs[i].mIndexCount / 3;
+        subMeshSizes[i] = temp;
+    }
+
+    BufferLoadDesc bDesc = {};
+    bDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_BUFFER;
+    bDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
+    bDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
+    bDesc.pData = subMeshSizes;
+    bDesc.mDesc.mSize = sizeof(uint32_t) * numSubmeshes;
+    bDesc.mDesc.pName = "submeshSizes";
+    bDesc.ppBuffer = &pSubmeshSizes;
+    bDesc.mDesc.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
+    bDesc.mDesc.mElementCount = numSubmeshes;
+    bDesc.mDesc.mStructStride = sizeof(uint32_t);
+
+    addResource(&bDesc, NULL);
+
     waitForAllResourceLoads();
 
 
@@ -318,7 +343,7 @@ bool KokkuTestApp::Init()
     //    gPerFrameData[frameIdx].mDrawCount[GEOMSET_ALPHA_CUTOUT] =
     //        gVBPreFilterStats[frameIdx].mGeomsetMaxDrawCounts[GEOMSET_ALPHA_CUTOUT];
     //}
-    
+
     //-----CAMERA-----//
     CameraMotionParameters cmp{ 160.0f, 600.0f, 200.0f };
     vec3                   camPos{ 48.0f, 48.0f, 20.0f };
@@ -482,6 +507,7 @@ void KokkuTestApp::Update(float deltaTime)
     const float  aspectInverse = (float)mSettings.mHeight / (float)mSettings.mWidth;
     const float  horizontal_fov = PI / 2.0f;
     CameraMatrix projMat = CameraMatrix::perspectiveReverseZ(horizontal_fov, aspectInverse, 0.1f, 1000.0f);
+    gUniformData.mSubmeshCount = mCastleScene.getGeometry()->mDrawArgCount;
     gUniformData.mProjectView = projMat * viewMat;
 
     // point light parameters
@@ -616,13 +642,13 @@ void KokkuTestApp::Draw()
     //cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Skybox");
     //cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 1.0f, 1.0f);
     //cmdBindPipeline(cmd, pSkyBoxDrawPipeline);
-    //cmdBindDescriptorSet(cmd, 0, pDescriptorSetTexture);
+    ////cmdBindDescriptorSet(cmd, 0, pDescriptorSetTexture);
     //cmdBindDescriptorSet(cmd, gFrameIndex * 2 + 0, pDescriptorSetUniforms);
     //cmdBindVertexBuffer(cmd, 1, &pSkyBoxVertexBuffer, &skyboxVbStride, NULL);
     //cmdDraw(cmd, 36, 0);
     //cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
     //cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
-    //
+
     cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Planets");
 
     cmdBindPipeline(cmd, pCastlePipeline);
@@ -708,7 +734,7 @@ void KokkuTestApp::Draw()
 
 const char* KokkuTestApp::GetName()
 {
-	return "KokkuRenderingEngineerTestApp";
+    return "KokkuRenderingEngineerTestApp";
 }
 
 bool KokkuTestApp::addSwapChain()
@@ -855,7 +881,7 @@ void KokkuTestApp::removePipelines()
 void KokkuTestApp::prepareDescriptorSets()
 {
     // Prepare descriptor sets
-    DescriptorData params[9] = {};
+    DescriptorData params[10] = {};
     params[0].pName = "RightText";
     params[0].ppTextures = &pSkyBoxTextures[0];
     params[1].pName = "LeftText";
@@ -874,7 +900,10 @@ void KokkuTestApp::prepareDescriptorSets()
     params[7].ppTextures = &pCastleAlbedo;
     params[8].pName = "uSampler1";
     params[8].ppSamplers = &pSmaplerCastle;
-    updateDescriptorSet(pRenderer, 0, pDescriptorSetTexture, 9, params);
+    params[9].pName = "submeshSizes";
+    params[9].ppBuffers = &pSubmeshSizes;
+
+    updateDescriptorSet(pRenderer, 0, pDescriptorSetTexture, 10, params);
 
     for (uint32_t i = 0; i < gDataBufferCount; ++i)
     {
