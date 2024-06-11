@@ -82,8 +82,8 @@ private:
     RootSignature* pRootSignature = NULL;
     Sampler* pSamplerSkyBox = NULL;
     Sampler* pSmaplerCastle = NULL;
-    Texture* pCastleAlbedo;
-    Texture* pCastleBump;
+    Texture* pCastleAlbedo[3];
+    Texture* pCastleBump[3];
     Texture* pSkyBoxTextures[6];
     DescriptorSet* pDescriptorSetTexture = { NULL };
     DescriptorSet* pDescriptorConstCastle = { NULL };
@@ -118,6 +118,7 @@ private:
     VBMeshInstance* pVBMeshInstances;
     Texture** ppDiffuseTexs;
 
+    void loadCastleTexs();
     void setupActions();
     
     bool addSwapChain();

@@ -223,12 +223,7 @@ bool KokkuTestApp::Init()
                                 ADDRESS_MODE_CLAMP_TO_EDGE };
     addSampler(pRenderer, &samplerDesc, &pSmaplerCastle);
 
-    TextureLoadDesc textureDesc = {};
-    textureDesc.pFileName = "Castle Exterior Texture.dds";
-    textureDesc.ppTexture = &pCastleAlbedo;
-    // Textures representing color should be stored in SRGB or HDR format
-    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
-    addResource(&textureDesc, NULL);
+    loadCastleTexs();
 
     GeometryLoadDesc sceneLoadDesc = {};
     mCastleScene.Load(&sceneLoadDesc, false);
@@ -398,7 +393,11 @@ void KokkuTestApp::Exit()
     for (uint i = 0; i < 6; ++i)
         removeResource(pSkyBoxTextures[i]);
 
-    removeResource(pCastleAlbedo);
+    for (uint i = 0; i < 3; ++i)
+    {
+        removeResource(pCastleAlbedo[i]);
+        removeResource(pCastleBump[i]);
+    }
 
     removeSampler(pRenderer, pSamplerSkyBox);
     removeSampler(pRenderer, pSmaplerCastle);
@@ -547,6 +546,49 @@ void KokkuTestApp::Update(float deltaTime)
     viewMat.setTranslation(vec3(0));
     gUniformDataSky = {};
     gUniformDataSky.mProjectView = projMat * viewMat;
+}
+
+void KokkuTestApp::loadCastleTexs()
+{
+    //Albedo:
+    TextureLoadDesc textureDesc = {};
+    textureDesc.pFileName = "Castle Exterior Texture.dds";
+    textureDesc.ppTexture = &pCastleAlbedo[0];
+    // Textures representing color should be stored in SRGB or HDR format
+    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&textureDesc, NULL);
+    textureDesc = {};
+    textureDesc.pFileName = "Castle Interior Texture.dds";
+    textureDesc.ppTexture = &pCastleAlbedo[1];
+    // Textures representing color should be stored in SRGB or HDR format
+    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&textureDesc, NULL);
+    textureDesc = {};
+    textureDesc.pFileName = "Ground and Fountain Texture.dds";
+    textureDesc.ppTexture = &pCastleAlbedo[2];
+    // Textures representing color should be stored in SRGB or HDR format
+    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&textureDesc, NULL);
+
+    //Bumps
+
+    textureDesc.pFileName = "Castle Exterior Texture Bump.dds";
+    textureDesc.ppTexture = &pCastleBump[0];
+    // Textures representing color should be stored in SRGB or HDR format
+    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&textureDesc, NULL);
+    textureDesc = {};
+    textureDesc.pFileName = "Castle Interior Texture Bump.dds";
+    textureDesc.ppTexture = &pCastleBump[1];
+    // Textures representing color should be stored in SRGB or HDR format
+    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&textureDesc, NULL);
+    textureDesc = {};
+    textureDesc.pFileName = "Ground and Fountain Texture Bump.dds";
+    textureDesc.ppTexture = &pCastleBump[2];
+    // Textures representing color should be stored in SRGB or HDR format
+    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&textureDesc, NULL);
 }
 
 void KokkuTestApp::Draw()
@@ -881,7 +923,7 @@ void KokkuTestApp::removePipelines()
 void KokkuTestApp::prepareDescriptorSets()
 {
     // Prepare descriptor sets
-    DescriptorData params[10] = {};
+    DescriptorData params[15] = {};
     params[0].pName = "RightText";
     params[0].ppTextures = &pSkyBoxTextures[0];
     params[1].pName = "LeftText";
@@ -896,14 +938,24 @@ void KokkuTestApp::prepareDescriptorSets()
     params[5].ppTextures = &pSkyBoxTextures[5];
     params[6].pName = "uSampler0";
     params[6].ppSamplers = &pSamplerSkyBox;
-    params[7].pName = "Albedo";
-    params[7].ppTextures = &pCastleAlbedo;
-    params[8].pName = "uSampler1";
-    params[8].ppSamplers = &pSmaplerCastle;
-    params[9].pName = "submeshSizes";
-    params[9].ppBuffers = &pSubmeshSizes;
+    params[7].pName = "Albedo1";
+    params[7].ppTextures = &pCastleAlbedo[0];
+    params[8].pName = "Albedo2";
+    params[8].ppTextures = &pCastleAlbedo[1];
+    params[9].pName = "Albedo3";
+    params[9].ppTextures = &pCastleAlbedo[2];
+    params[10].pName = "Bump1";
+    params[10].ppTextures = &pCastleBump[0];
+    params[11].pName = "Bump2";
+    params[11].ppTextures = &pCastleBump[1];
+    params[12].pName = "Bump3";
+    params[12].ppTextures = &pCastleBump[2];
+    params[13].pName = "uSampler1";
+    params[13].ppSamplers = &pSmaplerCastle;
+    params[14].pName = "submeshSizes";
+    params[14].ppBuffers = &pSubmeshSizes;
 
-    updateDescriptorSet(pRenderer, 0, pDescriptorSetTexture, 10, params);
+    updateDescriptorSet(pRenderer, 0, pDescriptorSetTexture, 15, params);
 
     for (uint32_t i = 0; i < gDataBufferCount; ++i)
     {

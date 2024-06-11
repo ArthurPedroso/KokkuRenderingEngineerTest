@@ -23,9 +23,14 @@
 */
 #include "resources.h.fsl"
 
-RES(Tex2D(float4), Albedo,  UPDATE_FREQ_NONE, t7, binding = 8);
-RES(Buffer(uint), submeshSizes, UPDATE_FREQ_NONE, t8, binding = 9);
-RES(SamplerState,  uSampler1, UPDATE_FREQ_NONE, s1, binding = 10);
+RES(Tex2D(float4), Albedo1,  UPDATE_FREQ_NONE, t7, binding = 8);
+RES(Tex2D(float4), Bump1,  UPDATE_FREQ_NONE, t8, binding = 9);
+RES(Tex2D(float4), Albedo2,  UPDATE_FREQ_NONE, t9, binding = 10);
+RES(Tex2D(float4), Bump2,  UPDATE_FREQ_NONE, t10, binding = 11);
+RES(Tex2D(float4), Albedo3,  UPDATE_FREQ_NONE, t11, binding = 12);
+RES(Tex2D(float4), Bump3,  UPDATE_FREQ_NONE, t12, binding = 13);
+RES(Buffer(uint), submeshSizes, UPDATE_FREQ_NONE, t13, binding = 14);
+RES(SamplerState,  uSampler1, UPDATE_FREQ_NONE, s1, binding = 15);
 // Shader for simple shading with a point light
 // for planets in Unit Test 12 - Transformations
 
@@ -42,11 +47,23 @@ float4 PS_MAIN(VSOutput In, SV_PrimitiveID(uint) primitiveID)
 
     float4 result;
     //In.Color = float4(1.0f, 1.0f, 1.0f, 1.0f);
-    result = float4(1.0, 0.0, 0.0, 1.0);//float4(result.xyz, 1.0f);
+    result = float4(0.0, 0.0, 0.0, 1.0);//float4(result.xyz, 1.0f);
 
-    if(primitiveID <= Get(submeshSizes)[0])
+    if(primitiveID < Get(submeshSizes)[0])
     {
-        result = SampleTex2D(Get(Albedo), Get(uSampler1), In.uv);        
+        result.x = SampleTex2D(Get(Albedo1), Get(uSampler1), In.uv).x;        
+    }
+    else if(primitiveID < Get(submeshSizes)[1])
+    {
+        result.y = SampleTex2D(Get(Albedo2), Get(uSampler1), In.uv).y;         
+    }
+    else if(primitiveID < Get(submeshSizes)[2])
+    {
+        result.z = SampleTex2D(Get(Albedo3), Get(uSampler1), In.uv).z;  
+    }
+    else
+    {
+        result.y = SampleTex2D(Get(Albedo2), Get(uSampler1), In.uv).y;  
     }
 
     RETURN(result);
