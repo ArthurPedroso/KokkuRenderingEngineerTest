@@ -27,9 +27,15 @@
     <ClCompile Include="..\src\KokkuTest\KokkuTestApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\KokkuTest\CastleScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\KokkuTest\KokkuTestApp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\KokkuTest\CastleScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

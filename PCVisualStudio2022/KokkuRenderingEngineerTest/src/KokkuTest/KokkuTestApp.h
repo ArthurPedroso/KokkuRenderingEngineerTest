@@ -1,10 +1,11 @@
 #pragma once
+#include "CastleScene.h"
 
 #include <Application/Interfaces/IApp.h>
 class KokkuTestApp : public IApp
 {
 private:
-   
+    CastleScene castleScene = {};
 public:
     bool Init();
     void Exit();
@@ -39,5 +40,8 @@ public:
     void removePipelines();
 
     void prepareDescriptorSets();
+
+    void loadCastle();
+
 };
 

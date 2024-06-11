@@ -24,7 +24,7 @@
 #include <Utilities/Math/MathTypes.h>
 
 #include <Utilities/Interfaces/IMemory.h>
-#define MAX_PLANETS 20 // Does not affect test, just for allocating space in uniform block. Must match with shader.
+//#define MAX_PLANETS 20 // Does not affect test, just for allocating space in uniform block. Must match with shader.
 
 
  /// Demo structures
@@ -32,21 +32,15 @@ struct PlanetInfoStruct
 {
     mat4  mTranslationMat;
     mat4  mScaleMat;
-    mat4  mSharedMat; // Matrix to pass down to children
     vec4  mColor;
-    uint  mParentIndex;
-    float mYOrbitSpeed; // Rotation speed around parent
-    float mZOrbitSpeed;
-    float mRotationSpeed; // Rotation speed around self
-    float mMorphingSpeed; // Speed of morphing betwee cube and sphere
 };
 
 struct UniformBlock
 {
     CameraMatrix mProjectView;
-    mat4         mToWorldMat[MAX_PLANETS];
-    vec4         mColor[MAX_PLANETS];
-    float        mGeometryWeight[MAX_PLANETS][4];
+    mat4         mToWorldMat;
+    vec4         mColor;
+    float        mGeometryWeight[4];
 
     // Point Light Information
     vec3 mLightPosition;
@@ -81,6 +75,7 @@ Buffer* pSphereIndexBuffer = NULL;
 uint32_t     gSphereIndexCount = 0;
 Pipeline* pSpherePipeline = NULL;
 VertexLayout gSphereVertexLayout = {};
+VertexLayout gCastleVertexLayout = {};
 uint32_t     gSphereLayoutType = 0;
 
 Shader* pSkyBoxDrawShader = NULL;
@@ -412,6 +407,7 @@ bool KokkuTestApp::Init()
     // FILE PATHS
     fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_BINARIES, "CompiledShaders");
     fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_TEXTURES, "Textures");
+    fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_MESHES, "Meshes");
     fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_FONTS, "Fonts");
     fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_SCREENSHOTS, "Screenshots");
     fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SCRIPTS, "Scripts");
@@ -555,118 +551,11 @@ bool KokkuTestApp::Init()
         scriptDescs[i].pScriptFileName = gWindowTestScripts[i];
     DEFINE_LUA_SCRIPTS(scriptDescs, numScripts);
 
+    GeometryLoadDesc sceneLoadDesc = {};
+    castleScene.Load(&sceneLoadDesc, false);
+
     waitForAllResourceLoads();
-
-    // Setup planets (Rotation speeds are relative to Earth's, some values randomly given)
-    // Sun
-    gPlanetInfoData[0].mParentIndex = 0;
-    gPlanetInfoData[0].mYOrbitSpeed = 0; // Earth years for one orbit
-    gPlanetInfoData[0].mZOrbitSpeed = 0;
-    gPlanetInfoData[0].mRotationSpeed = 24.0f; // Earth days for one rotation
-    gPlanetInfoData[0].mTranslationMat = mat4::identity();
-    gPlanetInfoData[0].mScaleMat = mat4::scale(vec3(10.0f));
-    gPlanetInfoData[0].mColor = vec4(0.97f, 0.38f, 0.09f, 0.0f);
-    gPlanetInfoData[0].mMorphingSpeed = 0.2f;
-
-    // Mercury
-    gPlanetInfoData[1].mParentIndex = 0;
-    gPlanetInfoData[1].mYOrbitSpeed = 0.5f;
-    gPlanetInfoData[1].mZOrbitSpeed = 0.0f;
-    gPlanetInfoData[1].mRotationSpeed = 58.7f;
-    gPlanetInfoData[1].mTranslationMat = mat4::translation(vec3(10.0f, 0, 0));
-    gPlanetInfoData[1].mScaleMat = mat4::scale(vec3(1.0f));
-    gPlanetInfoData[1].mColor = vec4(0.45f, 0.07f, 0.006f, 1.0f);
-    gPlanetInfoData[1].mMorphingSpeed = 5;
-
-    // Venus
-    gPlanetInfoData[2].mParentIndex = 0;
-    gPlanetInfoData[2].mYOrbitSpeed = 0.8f;
-    gPlanetInfoData[2].mZOrbitSpeed = 0.0f;
-    gPlanetInfoData[2].mRotationSpeed = 243.0f;
-    gPlanetInfoData[2].mTranslationMat = mat4::translation(vec3(20.0f, 0, 5));
-    gPlanetInfoData[2].mScaleMat = mat4::scale(vec3(2));
-    gPlanetInfoData[2].mColor = vec4(0.6f, 0.32f, 0.006f, 1.0f);
-    gPlanetInfoData[2].mMorphingSpeed = 1;
-
-    // Earth
-    gPlanetInfoData[3].mParentIndex = 0;
-    gPlanetInfoData[3].mYOrbitSpeed = 1.0f;
-    gPlanetInfoData[3].mZOrbitSpeed = 0.0f;
-    gPlanetInfoData[3].mRotationSpeed = 1.0f;
-    gPlanetInfoData[3].mTranslationMat = mat4::translation(vec3(30.0f, 0, 0));
-    gPlanetInfoData[3].mScaleMat = mat4::scale(vec3(4));
-    gPlanetInfoData[3].mColor = vec4(0.07f, 0.028f, 0.61f, 1.0f);
-    gPlanetInfoData[3].mMorphingSpeed = 1;
-
-    // Mars
-    gPlanetInfoData[4].mParentIndex = 0;
-    gPlanetInfoData[4].mYOrbitSpeed = 2.0f;
-    gPlanetInfoData[4].mZOrbitSpeed = 0.0f;
-    gPlanetInfoData[4].mRotationSpeed = 1.1f;
-    gPlanetInfoData[4].mTranslationMat = mat4::translation(vec3(40.0f, 0, 0));
-    gPlanetInfoData[4].mScaleMat = mat4::scale(vec3(3));
-    gPlanetInfoData[4].mColor = vec4(0.79f, 0.07f, 0.006f, 1.0f);
-    gPlanetInfoData[4].mMorphingSpeed = 1;
-
-    // Jupiter
-    gPlanetInfoData[5].mParentIndex = 0;
-    gPlanetInfoData[5].mYOrbitSpeed = 11.0f;
-    gPlanetInfoData[5].mZOrbitSpeed = 0.0f;
-    gPlanetInfoData[5].mRotationSpeed = 0.4f;
-    gPlanetInfoData[5].mTranslationMat = mat4::translation(vec3(50.0f, 0, 0));
-    gPlanetInfoData[5].mScaleMat = mat4::scale(vec3(8));
-    gPlanetInfoData[5].mColor = vec4(0.32f, 0.13f, 0.13f, 1);
-    gPlanetInfoData[5].mMorphingSpeed = 6;
-
-    // Saturn
-    gPlanetInfoData[6].mParentIndex = 0;
-    gPlanetInfoData[6].mYOrbitSpeed = 29.4f;
-    gPlanetInfoData[6].mZOrbitSpeed = 0.0f;
-    gPlanetInfoData[6].mRotationSpeed = 0.5f;
-    gPlanetInfoData[6].mTranslationMat = mat4::translation(vec3(60.0f, 0, 0));
-    gPlanetInfoData[6].mScaleMat = mat4::scale(vec3(6));
-    gPlanetInfoData[6].mColor = vec4(0.45f, 0.45f, 0.21f, 1.0f);
-    gPlanetInfoData[6].mMorphingSpeed = 1;
-
-    // Uranus
-    gPlanetInfoData[7].mParentIndex = 0;
-    gPlanetInfoData[7].mYOrbitSpeed = 84.07f;
-    gPlanetInfoData[7].mZOrbitSpeed = 0.0f;
-    gPlanetInfoData[7].mRotationSpeed = 0.8f;
-    gPlanetInfoData[7].mTranslationMat = mat4::translation(vec3(70.0f, 0, 0));
-    gPlanetInfoData[7].mScaleMat = mat4::scale(vec3(7));
-    gPlanetInfoData[7].mColor = vec4(0.13f, 0.13f, 0.32f, 1.0f);
-    gPlanetInfoData[7].mMorphingSpeed = 1;
-
-    // Neptune
-    gPlanetInfoData[8].mParentIndex = 0;
-    gPlanetInfoData[8].mYOrbitSpeed = 164.81f;
-    gPlanetInfoData[8].mZOrbitSpeed = 0.0f;
-    gPlanetInfoData[8].mRotationSpeed = 0.9f;
-    gPlanetInfoData[8].mTranslationMat = mat4::translation(vec3(80.0f, 0, 0));
-    gPlanetInfoData[8].mScaleMat = mat4::scale(vec3(8));
-    gPlanetInfoData[8].mColor = vec4(0.21f, 0.028f, 0.79f, 1.0f);
-    gPlanetInfoData[8].mMorphingSpeed = 1;
-
-    // Pluto - Not a planet XDD
-    gPlanetInfoData[9].mParentIndex = 0;
-    gPlanetInfoData[9].mYOrbitSpeed = 247.7f;
-    gPlanetInfoData[9].mZOrbitSpeed = 1.0f;
-    gPlanetInfoData[9].mRotationSpeed = 7.0f;
-    gPlanetInfoData[9].mTranslationMat = mat4::translation(vec3(90.0f, 0, 0));
-    gPlanetInfoData[9].mScaleMat = mat4::scale(vec3(1.0f));
-    gPlanetInfoData[9].mColor = vec4(0.45f, 0.21f, 0.21f, 1.0f);
-    gPlanetInfoData[9].mMorphingSpeed = 1;
-
-    // Moon
-    gPlanetInfoData[10].mParentIndex = 3;
-    gPlanetInfoData[10].mYOrbitSpeed = 1.0f;
-    gPlanetInfoData[10].mZOrbitSpeed = 200.0f;
-    gPlanetInfoData[10].mRotationSpeed = 27.0f;
-    gPlanetInfoData[10].mTranslationMat = mat4::translation(vec3(5.0f, 0, 0));
-    gPlanetInfoData[10].mScaleMat = mat4::scale(vec3(1));
-    gPlanetInfoData[10].mColor = vec4(0.07f, 0.07f, 0.13f, 1.0f);
-    gPlanetInfoData[10].mMorphingSpeed = 1;
+    
 
     CameraMotionParameters cmp{ 160.0f, 600.0f, 200.0f };
     vec3                   camPos{ 48.0f, 48.0f, 20.0f };
@@ -790,6 +679,8 @@ void KokkuTestApp::Exit()
     // Exit profile
     exitProfiler();
 
+    castleScene.Unload();
+
     for (uint32_t i = 0; i < gDataBufferCount; ++i)
     {
         removeResource(pProjViewUniformBuffer[i]);
@@ -839,6 +730,7 @@ bool KokkuTestApp::Load(ReloadDesc* pReloadDesc)
     if (pReloadDesc->mType & (RELOAD_TYPE_SHADER | RELOAD_TYPE_RENDERTARGET))
     {
         generate_complex_mesh();
+        //loadCastle();
         addPipelines();
     }
 
@@ -919,16 +811,16 @@ void KokkuTestApp::Update(float deltaTime)
     // update planet transformations
     for (unsigned int i = 0; i < gNumPlanets; i++)
     {
-        mat4 rotSelf, rotOrbitY, rotOrbitZ, trans, scale, parentMat;
-        rotSelf = rotOrbitY = rotOrbitZ = parentMat = mat4::identity();
-        if (gPlanetInfoData[i].mRotationSpeed > 0.0f)
-            rotSelf = mat4::rotationY(gRotSelfScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mRotationSpeed);
-        if (gPlanetInfoData[i].mYOrbitSpeed > 0.0f)
-            rotOrbitY = mat4::rotationY(gRotOrbitYScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mYOrbitSpeed);
-        if (gPlanetInfoData[i].mZOrbitSpeed > 0.0f)
-            rotOrbitZ = mat4::rotationZ(gRotOrbitZScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mZOrbitSpeed);
-        if (gPlanetInfoData[i].mParentIndex > 0)
-            parentMat = gPlanetInfoData[gPlanetInfoData[i].mParentIndex].mSharedMat;
+        mat4 trans, scale, parentMat;
+        parentMat = mat4::identity();
+        //if (gPlanetInfoData[i].mRotationSpeed > 0.0f)
+        //    rotSelf = mat4::rotationY(gRotSelfScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mRotationSpeed);
+        //if (gPlanetInfoData[i].mYOrbitSpeed > 0.0f)
+        //    rotOrbitY = mat4::rotationY(gRotOrbitYScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mYOrbitSpeed);
+        //if (gPlanetInfoData[i].mZOrbitSpeed > 0.0f)
+        //    rotOrbitZ = mat4::rotationZ(gRotOrbitZScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mZOrbitSpeed);
+        //if (gPlanetInfoData[i].mParentIndex > 0)
+        //    parentMat = gPlanetInfoData[gPlanetInfoData[i].mParentIndex].mSharedMat;
 
         trans = gPlanetInfoData[i].mTranslationMat;
         scale = gPlanetInfoData[i].mScaleMat;
@@ -937,18 +829,18 @@ void KokkuTestApp::Update(float deltaTime)
         scale[1][1] /= 2;
         scale[2][2] /= 2;
 
-        gPlanetInfoData[i].mSharedMat = parentMat * rotOrbitY * trans;
-        gUniformData.mToWorldMat[i] = parentMat * rotOrbitY * rotOrbitZ * trans * rotSelf * scale;
-        gUniformData.mColor[i] = gPlanetInfoData[i].mColor;
+        //gPlanetInfoData[i].mSharedMat = parentMat * rotOrbitY * trans;
+        gUniformData.mToWorldMat = parentMat * trans * scale;
+        gUniformData.mColor = gPlanetInfoData[i].mColor;
 
-        float step;
-        float phase = modf(currentTime * gPlanetInfoData[i].mMorphingSpeed / 2000.f, &step);
-        if (phase > 0.5f)
-            phase = 2 - phase * 2;
-        else
-            phase = phase * 2;
+        //float step;
+        //float phase = modf(currentTime * gPlanetInfoData[i].mMorphingSpeed / 2000.f, &step);
+        //if (phase > 0.5f)
+        //    phase = 2 - phase * 2;
+        //else
+        //    phase = phase * 2;
 
-        gUniformData.mGeometryWeight[i][0] = phase;
+        //gUniformData.mGeometryWeight[i][0] = phase;
     }
 
     viewMat.setTranslation(vec3(0));
@@ -1314,5 +1206,124 @@ void KokkuTestApp::prepareDescriptorSets()
         params[0].pName = "uniformBlock";
         params[0].ppBuffers = &pProjViewUniformBuffer[i];
         updateDescriptorSet(pRenderer, i * 2 + 1, pDescriptorSetUniforms, 1, params);
+    }
+}
+
+void KokkuTestApp::loadCastle()
+{
+
+    return;
+    gSphereVertexLayout = {};
+
+    // number of vertices on a quad side, must be >= 2
+#define DETAIL_LEVEL 64
+
+    // static here to prevent stack overflow
+    static float verts[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
+    static float sqNormals[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
+    static float sphNormals[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
+
+    for (int i = 0; i < 6; ++i)
+    {
+        for (int x = 0; x < DETAIL_LEVEL; ++x)
+        {
+            for (int y = 0; y < DETAIL_LEVEL; ++y)
+            {
+                float* vert = verts[i][x][y];
+                float* sqNorm = sqNormals[i][x][y];
+
+                sqNorm[0] = 0;
+                sqNorm[1] = 0;
+                sqNorm[2] = 0;
+
+                float fx = 2 * (float(x) / float(DETAIL_LEVEL - 1)) - 1;
+                float fy = 2 * (float(y) / float(DETAIL_LEVEL - 1)) - 1;
+
+                switch (i)
+                {
+                case 0:
+                    vert[0] = -1, vert[1] = fx, vert[2] = fy;
+                    sqNorm[0] = -1;
+                    break;
+                case 1:
+                    vert[0] = 1, vert[1] = -fx, vert[2] = fy;
+                    sqNorm[0] = 1;
+                    break;
+                case 2:
+                    vert[0] = -fx, vert[1] = fy, vert[2] = 1;
+                    sqNorm[2] = 1;
+                    break;
+                case 3:
+                    vert[0] = fx, vert[1] = fy, vert[2] = -1;
+                    sqNorm[2] = -1;
+                    break;
+                case 4:
+                    vert[0] = fx, vert[1] = 1, vert[2] = fy;
+                    sqNorm[1] = 1;
+                    break;
+                case 5:
+                    vert[0] = -fx, vert[1] = -1, vert[2] = fy;
+                    sqNorm[1] = -1;
+                    break;
+                }
+
+                compute_normal(vert, sphNormals[i][x][y]);
+            }
+        }
+    }
+
+    static uint8_t sqColors[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
+    static uint8_t spColors[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
+    for (int i = 0; i < 6; ++i)
+    {
+        for (int x = 0; x < DETAIL_LEVEL; ++x)
+        {
+            uint8_t spColorTemplate[3] = {
+                uint8_t(randomInt(0, 256)),
+                uint8_t(randomInt(0, 256)),
+                uint8_t(randomInt(0, 256)),
+            };
+
+            float rx = 1 - abs((float(x) / DETAIL_LEVEL) * 2 - 1);
+
+            for (int y = 0; y < DETAIL_LEVEL; ++y)
+            {
+                float    ry = 1 - abs((float(y) / DETAIL_LEVEL) * 2 - 1);
+                uint32_t close_ratio = uint32_t(rx * ry * 255);
+
+                uint8_t* sq_color = sqColors[i][x][y];
+                uint8_t* sp_color = spColors[i][x][y];
+
+                sq_color[0] = (randomInt(0, 256) * close_ratio) / 255;
+                sq_color[1] = (randomInt(0, 256) * close_ratio) / 255;
+                sq_color[2] = (randomInt(0, 256) * close_ratio) / 255;
+
+                sp_color[0] = (spColorTemplate[0] * close_ratio) / 255;
+                sp_color[1] = (spColorTemplate[1] * close_ratio) / 255;
+                sp_color[2] = (spColorTemplate[2] * close_ratio) / 255;
+            }
+        }
+    }
+
+    static uint16_t indices[6][DETAIL_LEVEL - 1][DETAIL_LEVEL - 1][6];
+    for (int i = 0; i < 6; ++i)
+    {
+        uint32_t o = DETAIL_LEVEL * DETAIL_LEVEL * i;
+        for (int x = 0; x < DETAIL_LEVEL - 1; ++x)
+        {
+            for (int y = 0; y < DETAIL_LEVEL - 1; ++y)
+            {
+                uint16_t* quadIndices = indices[i][x][y];
+
+#define vid(vx, vy) (o + (vx)*DETAIL_LEVEL + (vy))
+                quadIndices[0] = vid(x, y);
+                quadIndices[1] = vid(x, y + 1);
+                quadIndices[2] = vid(x + 1, y + 1);
+                quadIndices[3] = vid(x + 1, y + 1);
+                quadIndices[4] = vid(x + 1, y);
+                quadIndices[5] = vid(x, y);
+#undef vid
+            }
+        }
     }
 }

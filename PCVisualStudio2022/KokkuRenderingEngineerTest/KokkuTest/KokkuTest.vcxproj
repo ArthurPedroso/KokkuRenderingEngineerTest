@@ -12,9 +12,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\KokkuTest\AppMain.cpp" />
+    <ClCompile Include="..\src\KokkuTest\CastleScene.cpp" />
     <ClCompile Include="..\src\KokkuTest\KokkuTestApp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\KokkuTest\CastleScene.h" />
     <ClInclude Include="..\src\KokkuTest\KokkuTestApp.h" />
   </ItemGroup>
   <ItemGroup>
@@ -98,7 +100,7 @@ xcopy /Y /S /D "%FORGEART%\UnitTestResources\Textures\dds\Skybox_*.tex" "$(OutDi
 xcopy /Y /S /D "%FORGEART%\UnitTestResources\Textures\dds\circlepad.tex" "$(OutDir)Textures\"
 xcopy /Y /S /D "%FORGEART%\UnitTestResources\Fonts\*.ttf" "$(OutDir)Fonts\"
 xcopy /Y /S /D "%FORGEART%\UnitTestResources\Fonts\*.otf" "$(OutDir)Fonts\"
-xcopy /Y /S /D "%ART%\*.gltf" "$(OutDir)Meshes\"
+xcopy /Y /S /D "%ART%\castle.bin" "$(OutDir)Meshes\"
 xcopy /Y /S /D "%ART%\Tex\*.dds" "$(OutDir)Textures\"
 
 xcopy /Y /S /D /E "$(OutDir)..\OS\Shaders" "$(OutDir)Shaders"
@@ -168,7 +170,7 @@ xcopy /Y /S /D "%FORGEART%\UnitTestResources\Textures\dds\Skybox_*.tex" "$(OutDi
 xcopy /Y /S /D "%FORGEART%\UnitTestResources\Textures\dds\circlepad.tex" "$(OutDir)Textures\"
 xcopy /Y /S /D "%FORGEART%\UnitTestResources\Fonts\*.ttf" "$(OutDir)Fonts\"
 xcopy /Y /S /D "%FORGEART%\UnitTestResources\Fonts\*.otf" "$(OutDir)Fonts\"
-xcopy /Y /S /D "%ART%\*.gltf" "$(OutDir)Meshes\"
+xcopy /Y /S /D "%ART%\castle.bin" "$(OutDir)Meshes\"
 xcopy /Y /S /D "%ART%\Tex\*.dds" "$(OutDir)Textures\"
 
 xcopy /Y /S /D /E "$(OutDir)..\OS\Shaders" "$(OutDir)Shaders"
