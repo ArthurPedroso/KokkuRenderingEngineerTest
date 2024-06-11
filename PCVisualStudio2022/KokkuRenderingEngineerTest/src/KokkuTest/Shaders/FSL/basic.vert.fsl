@@ -44,7 +44,7 @@ VSOutput VS_MAIN( VSInput In)
     INIT_MAIN;
     VSOutput Out;
 
-    float4x4 tempMat = mul(Get(mvp), Get(toWorld));
+    float4x4 tempMat = mul(Get(mvp), Get(scaleMat));
     Out.Position = mul(tempMat, float4(In.Position1, 1.0f));
 	Out.Normal = float4(decodeDir(In.Normal), 0.0f).rgb;
 	Out.uv = In.TexCoord;

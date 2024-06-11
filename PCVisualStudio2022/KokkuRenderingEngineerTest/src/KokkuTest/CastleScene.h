@@ -13,8 +13,6 @@ private:
 public:
     Geometry* getGeometry() { return geom; }
 
-    void createCubeBuffers(Renderer* pRenderer, Buffer** outVertexBuffer, Buffer** outIndexBuffer);
     void Load(const GeometryLoadDesc* pTemplate, bool transparentFlags);
-    void Unload();
 };
 

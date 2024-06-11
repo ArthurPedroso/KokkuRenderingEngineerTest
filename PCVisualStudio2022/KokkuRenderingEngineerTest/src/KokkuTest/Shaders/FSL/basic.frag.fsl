@@ -32,7 +32,6 @@ RES(Tex2D(float4), Bump3,  UPDATE_FREQ_NONE, t12, binding = 13);
 RES(Buffer(uint), submeshSizes, UPDATE_FREQ_NONE, t13, binding = 14);
 RES(SamplerState,  uSampler1, UPDATE_FREQ_NONE, s1, binding = 15);
 // Shader for simple shading with a point light
-// for planets in Unit Test 12 - Transformations
 
 STRUCT(VSOutput)
 {

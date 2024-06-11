@@ -2,30 +2,16 @@
 
 
 // Interfaces
-//#include <Application/Interfaces/IApp.h>
-//#include <Application/Interfaces/ICameraController.h>
-//#include <Application/Interfaces/IFont.h>
-//#include <Application/Interfaces/IInput.h>
-//#include <Application/Interfaces/IProfiler.h>
-//#include <Application/Interfaces/IScreenshot.h>
-//#include <Application/Interfaces/IUI.h>
-//#include <Game/Interfaces/IScripting.h>
-//#include <Utilities/Interfaces/IFileSystem.h>
-//#include <Utilities/Interfaces/ILog.h>
-//#include <Utilities/Interfaces/ITime.h>
-//
-//#include <Utilities/RingBuffer.h>
-//
-//// Renderer
-//#include <Graphics/Interfaces/IGraphics.h>
-//#include <Resources/ResourceLoader/Interfaces/IResourceLoader.h>
-//
-//// Math
-//
-//#include <Utilities/Interfaces/IMemory.h>
-//#define MAX_PLANETS 20 // Does not affect test, just for allocating space in uniform block. Must match with shader.
+#include <Application/Interfaces/IScreenshot.h>
+#include <Application/Interfaces/IInput.h>
+#include <Renderer/Interfaces/IVisibilityBuffer.h>
+#include <Utilities/Interfaces/IFileSystem.h>
+#include <Utilities/Interfaces/ILog.h>
+#include <Utilities/Interfaces/ITime.h>
 
-
+// Renderer
+#include <Graphics/Interfaces/IGraphics.h>
+#include <Resources/ResourceLoader/Interfaces/IResourceLoader.h>
 
 
 const char* pSkyBoxImageFileNames[] = { "Skybox_right1.tex",  "Skybox_left2.tex",  "Skybox_top3.tex",
@@ -189,16 +175,6 @@ bool KokkuTestApp::Init()
     guiDesc.mStartPosition = vec2(mSettings.mWidth * 0.01f, mSettings.mHeight * 0.2f);
     uiCreateComponent(GetName(), &guiDesc, &pGuiWindow);
 
-    SliderUintWidget vertexLayoutWidget;
-    vertexLayoutWidget.mMin = 0;
-    vertexLayoutWidget.mMax = 1;
-    vertexLayoutWidget.mStep = 1;
-    vertexLayoutWidget.pData = &gSphereLayoutType;
-    UIWidget* pVLw = uiCreateComponentWidget(pGuiWindow, "Vertex Layout", &vertexLayoutWidget, WIDGET_TYPE_SLIDER_UINT);
-    uiSetWidgetOnEditedCallback(pVLw, nullptr, [](void*) -> void {
-        ReloadDesc reload{ RELOAD_TYPE_SHADER };
-        requestReload(&reload);
-        });
 
     if (pRenderer->pGpu->mSettings.mPipelineStatsQueries)
     {
@@ -225,142 +201,19 @@ bool KokkuTestApp::Init()
 
     loadCastleTexs();
 
-    GeometryLoadDesc sceneLoadDesc = {};
-    mCastleScene.Load(&sceneLoadDesc, false);
-
-    uint32_t numSubmeshes = mCastleScene.getGeometry()->mDrawArgCount;
-    const uint32_t maxSubmeshes = 256;
-    uint32_t subMeshSizes[maxSubmeshes];
-    uint32_t temp = 0;
-    for (uint32_t i = 0; i < numSubmeshes && i < maxSubmeshes; i++)
-    {
-        temp += mCastleScene.getGeometry()->pDrawArgs[i].mIndexCount / 3;
-        subMeshSizes[i] = temp;
-    }
-
-    BufferLoadDesc bDesc = {};
-    bDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_BUFFER;
-    bDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-    bDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
-    bDesc.pData = subMeshSizes;
-    bDesc.mDesc.mSize = sizeof(uint32_t) * numSubmeshes;
-    bDesc.mDesc.pName = "submeshSizes";
-    bDesc.ppBuffer = &pSubmeshSizes;
-    bDesc.mDesc.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
-    bDesc.mDesc.mElementCount = numSubmeshes;
-    bDesc.mDesc.mStructStride = sizeof(uint32_t);
-
-    addResource(&bDesc, NULL);
+    loadCastle();
 
     waitForAllResourceLoads();
 
-
-    //Geometry* geom = mCastleScene.getGeometry();
-    //const uint32_t meshCount = geom->mDrawArgCount;
-    //pVBMeshInstances = (VBMeshInstance*)tf_calloc(meshCount, sizeof(VBMeshInstance));
-    //gDiffuseMapsStorage = (Texture**)tf_malloc(sizeof(Texture*) * gMaterialCount);
-    //gNormalMapsStorage = (Texture**)tf_malloc(sizeof(Texture*) * gMaterialCount);
-    //gSpecularMapsStorage = (Texture**)tf_malloc(sizeof(Texture*) * gMaterialCount);
-
-    //for (uint32_t i = 0; i < gMaterialCount; ++i)
-    //{
-    //    TextureLoadDesc desc = {};
-    //    desc.pFileName = pScene->textures[i];
-    //    desc.ppTexture = &gDiffuseMapsStorage[i];
-    //    // Textures representing color should be stored in SRGB or HDR format
-    //    desc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
-    //
-    //    addResource(&desc, &token);
-    //
-    //    TextureLoadDesc descNormal = {};
-    //    descNormal.pFileName = pScene->normalMaps[i];
-    //    descNormal.ppTexture = &gNormalMapsStorage[i];
-    //    addResource(&descNormal, &token);
-    //
-    //    TextureLoadDesc descSpec = {};
-    //    descSpec.pFileName = pScene->specularMaps[i];
-    //    descSpec.ppTexture = &gSpecularMapsStorage[i];
-    //    addResource(&descSpec, &token);
-    //}
-
-    //MeshConstants* meshConstants = (MeshConstants*)tf_malloc(gMeshCount * sizeof(MeshConstants));
-
-    // Calculate mesh constants and filter containers
-    //for (uint32_t i = 0; i < meshCount; ++i)
-    //{
-    //    MaterialFlags materialFlag = mCastleScene.getMatFlags()[i];
-    //    //uint32_t      geomSet = materialFlag & MATERIAL_FLAG_ALPHA_TESTED ? GEOMSET_ALPHA_CUTOUT : GEOMSET_OPAQUE;
-    //    //visibilityBufferFilteredIndexCount[geomSet] += (pScene->geom->pDrawArgs + i)->mIndexCount;
-    //    pVBMeshInstances[i].mGeometrySet = materialFlag;
-    //    pVBMeshInstances[i].mMeshIndex = i;
-    //    pVBMeshInstances[i].mTriangleCount = (geom->pDrawArgs + i)->mIndexCount / 3;
-    //    pVBMeshInstances[i].mInstanceIndex = -1; // INSTANCE_INDEX_NONE;
-    //
-    //    //meshConstants[i].indexOffset = pSanMiguelModel->pDrawArgs[i].mStartIndex;
-    //    //meshConstants[i].vertexOffset = pSanMiguelModel->pDrawArgs[i].mVertexOffset;
-    //    //meshConstants[i].materialID = i;
-    //    //meshConstants[i].twoSided = (pScene->materialFlags[i] & MATERIAL_FLAG_TWO_SIDED) ? 1 : 0;
-    //}
-
-    //BufferLoadDesc meshConstantDesc = {};
-    //meshConstantDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_BUFFER;
-    //meshConstantDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-    //meshConstantDesc.mDesc.mElementCount = gMeshCount;
-    //meshConstantDesc.mDesc.mStructStride = sizeof(MeshConstants);
-    //meshConstantDesc.mDesc.mSize = meshConstantDesc.mDesc.mElementCount * meshConstantDesc.mDesc.mStructStride;
-    //meshConstantDesc.mDesc.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
-    //meshConstantDesc.ppBuffer = &pBufferMeshConstants;
-    //meshConstantDesc.pData = meshConstants;
-    //meshConstantDesc.mDesc.pName = "Mesh Constant desc";
-    //addResource(&meshConstantDesc, &token);
-
-    //VisibilityBufferDesc vbDesc = {};
-    //vbDesc.mNumFrames = gDataBufferCount;
-    //vbDesc.mNumBuffers = 1; // We don't use Async Compute for triangle filtering, 1 buffer is enough
-    //vbDesc.mNumGeometrySets = NUM_GEOMETRY_SETS;
-    //vbDesc.pMaxIndexCountPerGeomSet = visibilityBufferFilteredIndexCount;
-    //vbDesc.mNumViews = NUM_CULLING_VIEWPORTS;
-    //vbDesc.mComputeThreads = VB_COMPUTE_THREADS;
-    //initVisibilityBuffer(pRenderer, &vbDesc, &pVisibilityBuffer);
-    //
-    //UpdateVBMeshFilterGroupsDesc updateVBMeshFilterGroupsDesc = {};
-    //updateVBMeshFilterGroupsDesc.mNumMeshInstance = gMeshCount;
-    //updateVBMeshFilterGroupsDesc.pVBMeshInstances = pVBMeshInstances;
-    //for (uint32_t i = 0; i < gDataBufferCount; ++i)
-    //{
-    //    updateVBMeshFilterGroupsDesc.mFrameIndex = i;
-    //    gVBPreFilterStats[i] = updateVBMeshFilterGroups(pVisibilityBuffer, &updateVBMeshFilterGroupsDesc);
-    //}
-    //
-    //for (uint32_t frameIdx = 0; frameIdx < gDataBufferCount; ++frameIdx)
-    //{
-    //    gPerFrameData[frameIdx].mDrawCount[GEOMSET_OPAQUE] = gVBPreFilterStats[frameIdx].mGeomsetMaxDrawCounts[GEOMSET_OPAQUE];
-    //    gPerFrameData[frameIdx].mDrawCount[GEOMSET_ALPHA_CUTOUT] =
-    //        gVBPreFilterStats[frameIdx].mGeomsetMaxDrawCounts[GEOMSET_ALPHA_CUTOUT];
-    //}
-
     //-----CAMERA-----//
-    CameraMotionParameters cmp{ 160.0f, 600.0f, 200.0f };
-    vec3                   camPos{ 48.0f, 48.0f, 20.0f };
-    vec3                   lookAt{ vec3(0) };
-
-    pCameraController = initFpsCameraController(camPos, lookAt);
-
-    pCameraController->setMotionParameters(cmp);
-
-    InputSystemDesc inputDesc = {};
-    inputDesc.pRenderer = pRenderer;
-    inputDesc.pWindow = pWindow;
-    inputDesc.pJoystickTexture = "circlepad.tex";
-    if (!initInputSystem(&inputDesc))
-        return false;
+    bool result = setupCamera();
 
 
     setupActions();
 
     gFrameIndex = 0;
 
-    return true;
+    return result;
 }
 
 void KokkuTestApp::Exit()
@@ -375,8 +228,6 @@ void KokkuTestApp::Exit()
 
     // Exit profile
     exitProfiler();
-
-    mCastleScene.Unload();
 
     for (uint32_t i = 0; i < gDataBufferCount; ++i)
     {
@@ -433,8 +284,6 @@ bool KokkuTestApp::Load(ReloadDesc* pReloadDesc)
 
     if (pReloadDesc->mType & (RELOAD_TYPE_SHADER | RELOAD_TYPE_RENDERTARGET))
     {
-        //generate_complex_mesh();
-        loadCastle();
         addPipelines();
     }
 
@@ -469,8 +318,6 @@ void KokkuTestApp::Unload(ReloadDesc* pReloadDesc)
     if (pReloadDesc->mType & (RELOAD_TYPE_SHADER | RELOAD_TYPE_RENDERTARGET))
     {
         removePipelines();
-        //removeResource(pSphereVertexBuffer);
-        //removeResource(pSphereIndexBuffer);
     }
 
     if (pReloadDesc->mType & (RELOAD_TYPE_RESIZE | RELOAD_TYPE_RENDERTARGET))
@@ -513,82 +360,20 @@ void KokkuTestApp::Update(float deltaTime)
     gUniformData.mLightPosition = vec3(0, 0, 0);
     gUniformData.mLightColor = vec3(0.9f, 0.9f, 0.7f); // Pale Yellow
 
-    // update planet transformations
+    // update transformations
     mat4 trans, scale;
     trans = mat4::identity();
-    //if (gPlanetInfoData[i].mRotationSpeed > 0.0f)
-        //    rotSelf = mat4::rotationY(gRotSelfScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mRotationSpeed);
-        //if (gPlanetInfoData[i].mYOrbitSpeed > 0.0f)
-        //    rotOrbitY = mat4::rotationY(gRotOrbitYScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mYOrbitSpeed);
-        //if (gPlanetInfoData[i].mZOrbitSpeed > 0.0f)
-        //    rotOrbitZ = mat4::rotationZ(gRotOrbitZScale * (currentTime + gTimeOffset) / gPlanetInfoData[i].mZOrbitSpeed);
-        //if (gPlanetInfoData[i].mParentIndex > 0)
-        //    parentMat = gPlanetInfoData[gPlanetInfoData[i].mParentIndex].mSharedMat;
     scale = mat4::identity();
 
     scale[0][0] *= 100;
     scale[1][1] *= 100;
     scale[2][2] *= 100;
 
-    //gPlanetInfoData[i].mSharedMat = parentMat * rotOrbitY * trans;
-    gUniformData.mToWorldMat = trans * scale;
-    //gUniformData.mColor = gPlanetInfoData[i].mColor;
-
-    //float step;
-    //float phase = modf(currentTime * gPlanetInfoData[i].mMorphingSpeed / 2000.f, &step);
-    //if (phase > 0.5f)
-    //    phase = 2 - phase * 2;
-    //else
-    //    phase = phase * 2;
-
-        //gUniformData.mGeometryWeight[i][0] = phase;
+    gUniformData.mScaleMat = trans * scale;
 
     viewMat.setTranslation(vec3(0));
     gUniformDataSky = {};
     gUniformDataSky.mProjectView = projMat * viewMat;
-}
-
-void KokkuTestApp::loadCastleTexs()
-{
-    //Albedo:
-    TextureLoadDesc textureDesc = {};
-    textureDesc.pFileName = "Castle Exterior Texture.dds";
-    textureDesc.ppTexture = &pCastleAlbedo[0];
-    // Textures representing color should be stored in SRGB or HDR format
-    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
-    addResource(&textureDesc, NULL);
-    textureDesc = {};
-    textureDesc.pFileName = "Castle Interior Texture.dds";
-    textureDesc.ppTexture = &pCastleAlbedo[1];
-    // Textures representing color should be stored in SRGB or HDR format
-    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
-    addResource(&textureDesc, NULL);
-    textureDesc = {};
-    textureDesc.pFileName = "Ground and Fountain Texture.dds";
-    textureDesc.ppTexture = &pCastleAlbedo[2];
-    // Textures representing color should be stored in SRGB or HDR format
-    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
-    addResource(&textureDesc, NULL);
-
-    //Bumps
-
-    textureDesc.pFileName = "Castle Exterior Texture Bump.dds";
-    textureDesc.ppTexture = &pCastleBump[0];
-    // Textures representing color should be stored in SRGB or HDR format
-    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
-    addResource(&textureDesc, NULL);
-    textureDesc = {};
-    textureDesc.pFileName = "Castle Interior Texture Bump.dds";
-    textureDesc.ppTexture = &pCastleBump[1];
-    // Textures representing color should be stored in SRGB or HDR format
-    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
-    addResource(&textureDesc, NULL);
-    textureDesc = {};
-    textureDesc.pFileName = "Ground and Fountain Texture Bump.dds";
-    textureDesc.ppTexture = &pCastleBump[2];
-    // Textures representing color should be stored in SRGB or HDR format
-    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
-    addResource(&textureDesc, NULL);
 }
 
 void KokkuTestApp::Draw()
@@ -668,7 +453,7 @@ void KokkuTestApp::Draw()
     };
     cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers);
 
-    cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Skybox/Planets");
+    cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Skybox");
 
     // simply record the screen cleaning command
     BindRenderTargetsDesc bindRenderTargets = {};
@@ -681,17 +466,17 @@ void KokkuTestApp::Draw()
 
     const uint32_t skyboxVbStride = sizeof(float) * 4;
     // draw skybox
-    //cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Skybox");
-    //cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 1.0f, 1.0f);
-    //cmdBindPipeline(cmd, pSkyBoxDrawPipeline);
-    ////cmdBindDescriptorSet(cmd, 0, pDescriptorSetTexture);
-    //cmdBindDescriptorSet(cmd, gFrameIndex * 2 + 0, pDescriptorSetUniforms);
-    //cmdBindVertexBuffer(cmd, 1, &pSkyBoxVertexBuffer, &skyboxVbStride, NULL);
-    //cmdDraw(cmd, 36, 0);
-    //cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
-    //cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
+    cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Skybox");
+    cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 1.0f, 1.0f);
+    cmdBindPipeline(cmd, pSkyBoxDrawPipeline);
+    cmdBindDescriptorSet(cmd, 0, pDescriptorSetTexture);
+    cmdBindDescriptorSet(cmd, gFrameIndex * 2 + 0, pDescriptorSetUniforms);
+    cmdBindVertexBuffer(cmd, 1, &pSkyBoxVertexBuffer, &skyboxVbStride, NULL);
+    cmdDraw(cmd, 36, 0);
+    cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
+    cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 
-    cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Planets");
+    cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Castle");
 
     cmdBindPipeline(cmd, pCastlePipeline);
     cmdBindDescriptorSet(cmd, 0, pDescriptorSetTexture);
@@ -701,7 +486,7 @@ void KokkuTestApp::Draw()
 
     cmdDrawIndexedInstanced(cmd, mCastleScene.getGeometry()->mIndexCount, 0, 1, 0, 0);
     cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
-    cmdEndGpuTimestampQuery(cmd, gGpuProfileToken); // Draw Skybox/Planets
+    cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
     cmdBindRenderTargets(cmd, NULL);
 
     if (pRenderer->pGpu->mSettings.mPipelineStatsQueries)
@@ -835,7 +620,7 @@ void KokkuTestApp::addRootSignatures()
 {
     Shader* shaders[2];
     uint32_t shadersCount = 0;
-    shaders[shadersCount++] = pSphereShader;
+    shaders[shadersCount++] = pCastleShader;
     shaders[shadersCount++] = pSkyBoxDrawShader;
 
     RootSignatureDesc rootDesc = {};
@@ -857,12 +642,12 @@ void KokkuTestApp::addShaders()
     basicShader.mStages[1].pFileName = "basic.frag";
 
     addShader(pRenderer, &skyShader, &pSkyBoxDrawShader);
-    addShader(pRenderer, &basicShader, &pSphereShader);
+    addShader(pRenderer, &basicShader, &pCastleShader);
 }
 
 void KokkuTestApp::removeShaders()
 {
-    removeShader(pRenderer, pSphereShader);
+    removeShader(pRenderer, pCastleShader);
     removeShader(pRenderer, pSkyBoxDrawShader);
 }
 
@@ -871,8 +656,8 @@ void KokkuTestApp::addPipelines()
     RasterizerStateDesc rasterizerStateDesc = {};
     rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
 
-    RasterizerStateDesc sphereRasterizerStateDesc = {};
-    sphereRasterizerStateDesc.mCullMode = CULL_MODE_NONE;
+    RasterizerStateDesc castleRasterizerStateDesc = {};
+    castleRasterizerStateDesc.mCullMode = CULL_MODE_NONE;
 
     DepthStateDesc depthStateDesc = {};
     depthStateDesc.mDepthTest = true;
@@ -890,9 +675,9 @@ void KokkuTestApp::addPipelines()
     pipelineSettings.mSampleQuality = pSwapChain->ppRenderTargets[0]->mSampleQuality;
     pipelineSettings.mDepthStencilFormat = pDepthBuffer->mFormat;
     pipelineSettings.pRootSignature = pRootSignature;
-    pipelineSettings.pShaderProgram = pSphereShader;
-    pipelineSettings.pVertexLayout = &gSphereVertexLayout;
-    pipelineSettings.pRasterizerState = &sphereRasterizerStateDesc;
+    pipelineSettings.pShaderProgram = pCastleShader;
+    pipelineSettings.pVertexLayout = &gCastleVertexLayout;
+    pipelineSettings.pRasterizerState = &castleRasterizerStateDesc;
     pipelineSettings.mVRFoveatedRendering = true;
     addPipeline(pRenderer, &desc, &pCastlePipeline);
 
@@ -970,45 +755,95 @@ void KokkuTestApp::prepareDescriptorSets()
     }
 }
 
+void KokkuTestApp::loadCastleTexs()
+{
+    //Albedo:
+    TextureLoadDesc textureDesc = {};
+    textureDesc.pFileName = "Castle Exterior Texture.dds";
+    textureDesc.ppTexture = &pCastleAlbedo[0];
+    // Textures representing color should be stored in SRGB or HDR format
+    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&textureDesc, NULL);
+    textureDesc = {};
+    textureDesc.pFileName = "Castle Interior Texture.dds";
+    textureDesc.ppTexture = &pCastleAlbedo[1];
+    // Textures representing color should be stored in SRGB or HDR format
+    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&textureDesc, NULL);
+    textureDesc = {};
+    textureDesc.pFileName = "Ground and Fountain Texture.dds";
+    textureDesc.ppTexture = &pCastleAlbedo[2];
+    // Textures representing color should be stored in SRGB or HDR format
+    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&textureDesc, NULL);
+
+    //Bumps
+
+    textureDesc.pFileName = "Castle Exterior Texture Bump.dds";
+    textureDesc.ppTexture = &pCastleBump[0];
+    // Textures representing color should be stored in SRGB or HDR format
+    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&textureDesc, NULL);
+    textureDesc = {};
+    textureDesc.pFileName = "Castle Interior Texture Bump.dds";
+    textureDesc.ppTexture = &pCastleBump[1];
+    // Textures representing color should be stored in SRGB or HDR format
+    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&textureDesc, NULL);
+    textureDesc = {};
+    textureDesc.pFileName = "Ground and Fountain Texture Bump.dds";
+    textureDesc.ppTexture = &pCastleBump[2];
+    // Textures representing color should be stored in SRGB or HDR format
+    textureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
+    addResource(&textureDesc, NULL);
+}
+
 void KokkuTestApp::loadCastle()
 {
-    gSphereVertexLayout = {};
-    gSphereVertexLayout.mAttribCount = 3;
-    gSphereVertexLayout.mBindingCount = 3;
-    gSphereVertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-    gSphereVertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
-    gSphereVertexLayout.mAttribs[0].mBinding = 0;
-    gSphereVertexLayout.mAttribs[0].mLocation = 0;
-    gSphereVertexLayout.mAttribs[1].mSemantic = SEMANTIC_NORMAL;
-    gSphereVertexLayout.mAttribs[1].mFormat = TinyImageFormat_R16G16_UNORM;
-    gSphereVertexLayout.mAttribs[1].mBinding = 1;
-    gSphereVertexLayout.mAttribs[1].mLocation = 1;
-    gSphereVertexLayout.mAttribs[2].mSemantic = SEMANTIC_TEXCOORD0;
-    gSphereVertexLayout.mAttribs[2].mFormat = TinyImageFormat_R16G16_SFLOAT;
-    gSphereVertexLayout.mAttribs[2].mBinding = 2;
-    gSphereVertexLayout.mAttribs[2].mLocation = 2;
-    //gSphereVertexLayout = {};
-    //
-    //void* bufferData = nullptr;
-    //
-    //gSphereVertexLayout.mBindingCount = 1;
-    //gSphereVertexLayout.mBindings[0].mStride = 12;
-    //size_t vsize = vertexCount * gSphereVertexLayout.mBindings[0].mStride;
-    //
-    //add_attribute(&gSphereVertexLayout, SEMANTIC_POSITION, TinyImageFormat_R32G32B32_SFLOAT, 0);
-    //add_attribute(&gSphereVertexLayout, SEMANTIC_NORMAL, TinyImageFormat_R32G32B32_SFLOAT, 16);
-    //add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD1, TinyImageFormat_R32G32B32_SFLOAT, 32);
-    //add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD3, TinyImageFormat_R32G32B32_SFLOAT, 32);
-    //add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD0, TinyImageFormat_R8G8B8A8_UNORM, 12);
-    //add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD2, TinyImageFormat_R8G8B8A8_UNORM, 28);
-    //
-    //copy_attribute(&gSphereVertexLayout, bufferData, 0, 12, vertexCount, verts);
-    //copy_attribute(&gSphereVertexLayout, bufferData, 12, 3, vertexCount, sqColors);
-    //copy_attribute(&gSphereVertexLayout, bufferData, 16, 12, vertexCount, sqNormals);
-    //copy_attribute(&gSphereVertexLayout, bufferData, 28, 3, vertexCount, spColors);
-    //copy_attribute(&gSphereVertexLayout, bufferData, 32, 12, vertexCount, sphNormals);
+    GeometryLoadDesc sceneLoadDesc = {};
+    mCastleScene.Load(&sceneLoadDesc, false);
 
-    //waitForAllResourceLoads();
+    uint32_t numSubmeshes = mCastleScene.getGeometry()->mDrawArgCount;
+    const uint32_t maxSubmeshes = 256;
+    uint32_t subMeshSizes[maxSubmeshes];
+    uint32_t temp = 0;
+    for (uint32_t i = 0; i < numSubmeshes && i < maxSubmeshes; i++)
+    {
+        temp += mCastleScene.getGeometry()->pDrawArgs[i].mIndexCount / 3;
+        subMeshSizes[i] = temp;
+    }
+
+    BufferLoadDesc bDesc = {};
+    bDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_BUFFER;
+    bDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
+    bDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
+    bDesc.pData = subMeshSizes;
+    bDesc.mDesc.mSize = sizeof(uint32_t) * numSubmeshes;
+    bDesc.mDesc.pName = "submeshSizes";
+    bDesc.ppBuffer = &pSubmeshSizes;
+    bDesc.mDesc.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
+    bDesc.mDesc.mElementCount = numSubmeshes;
+    bDesc.mDesc.mStructStride = sizeof(uint32_t);
+
+    addResource(&bDesc, NULL);
+
+    gCastleVertexLayout = {};
+    gCastleVertexLayout.mAttribCount = 3;
+    gCastleVertexLayout.mBindingCount = 3;
+    gCastleVertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
+    gCastleVertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
+    gCastleVertexLayout.mAttribs[0].mBinding = 0;
+    gCastleVertexLayout.mAttribs[0].mLocation = 0;
+    gCastleVertexLayout.mAttribs[1].mSemantic = SEMANTIC_NORMAL;
+    gCastleVertexLayout.mAttribs[1].mFormat = TinyImageFormat_R16G16_UNORM;
+    gCastleVertexLayout.mAttribs[1].mBinding = 1;
+    gCastleVertexLayout.mAttribs[1].mLocation = 1;
+    gCastleVertexLayout.mAttribs[2].mSemantic = SEMANTIC_TEXCOORD0;
+    gCastleVertexLayout.mAttribs[2].mFormat = TinyImageFormat_R16G16_SFLOAT;
+    gCastleVertexLayout.mAttribs[2].mBinding = 2;
+    gCastleVertexLayout.mAttribs[2].mLocation = 2;
+
+    waitForAllResourceLoads();
 }
 
 void KokkuTestApp::add_attribute(VertexLayout* layout, ShaderSemantic semantic, TinyImageFormat format, uint32_t offset)
@@ -1054,216 +889,6 @@ void KokkuTestApp::compute_normal(const float* src, float* dst)
     }
 }
 
-void KokkuTestApp::generate_complex_mesh()
-{
-    /*
-    gSphereVertexLayout = {};
-
-    // number of vertices on a quad side, must be >= 2
-#define DETAIL_LEVEL 64
-
-    // static here to prevent stack overflow
-    static float verts[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
-    static float sqNormals[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
-    static float sphNormals[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
-
-    for (int i = 0; i < 6; ++i)
-    {
-        for (int x = 0; x < DETAIL_LEVEL; ++x)
-        {
-            for (int y = 0; y < DETAIL_LEVEL; ++y)
-            {
-                float* vert = verts[i][x][y];
-                float* sqNorm = sqNormals[i][x][y];
-
-                sqNorm[0] = 0;
-                sqNorm[1] = 0;
-                sqNorm[2] = 0;
-
-                float fx = 2 * (float(x) / float(DETAIL_LEVEL - 1)) - 1;
-                float fy = 2 * (float(y) / float(DETAIL_LEVEL - 1)) - 1;
-
-                switch (i)
-                {
-                case 0:
-                    vert[0] = -1, vert[1] = fx, vert[2] = fy;
-                    sqNorm[0] = -1;
-                    break;
-                case 1:
-                    vert[0] = 1, vert[1] = -fx, vert[2] = fy;
-                    sqNorm[0] = 1;
-                    break;
-                case 2:
-                    vert[0] = -fx, vert[1] = fy, vert[2] = 1;
-                    sqNorm[2] = 1;
-                    break;
-                case 3:
-                    vert[0] = fx, vert[1] = fy, vert[2] = -1;
-                    sqNorm[2] = -1;
-                    break;
-                case 4:
-                    vert[0] = fx, vert[1] = 1, vert[2] = fy;
-                    sqNorm[1] = 1;
-                    break;
-                case 5:
-                    vert[0] = -fx, vert[1] = -1, vert[2] = fy;
-                    sqNorm[1] = -1;
-                    break;
-                }
-
-                compute_normal(vert, sphNormals[i][x][y]);
-            }
-        }
-    }
-
-    static uint8_t sqColors[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
-    static uint8_t spColors[6][DETAIL_LEVEL][DETAIL_LEVEL][3];
-    for (int i = 0; i < 6; ++i)
-    {
-        for (int x = 0; x < DETAIL_LEVEL; ++x)
-        {
-            uint8_t spColorTemplate[3] = {
-                uint8_t(randomInt(0, 256)),
-                uint8_t(randomInt(0, 256)),
-                uint8_t(randomInt(0, 256)),
-            };
-
-            float rx = 1 - abs((float(x) / DETAIL_LEVEL) * 2 - 1);
-
-            for (int y = 0; y < DETAIL_LEVEL; ++y)
-            {
-                float    ry = 1 - abs((float(y) / DETAIL_LEVEL) * 2 - 1);
-                uint32_t close_ratio = uint32_t(rx * ry * 255);
-
-                uint8_t* sq_color = sqColors[i][x][y];
-                uint8_t* sp_color = spColors[i][x][y];
-
-                sq_color[0] = (randomInt(0, 256) * close_ratio) / 255;
-                sq_color[1] = (randomInt(0, 256) * close_ratio) / 255;
-                sq_color[2] = (randomInt(0, 256) * close_ratio) / 255;
-
-                sp_color[0] = (spColorTemplate[0] * close_ratio) / 255;
-                sp_color[1] = (spColorTemplate[1] * close_ratio) / 255;
-                sp_color[2] = (spColorTemplate[2] * close_ratio) / 255;
-            }
-        }
-    }
-
-    static uint16_t indices[6][DETAIL_LEVEL - 1][DETAIL_LEVEL - 1][6];
-    for (int i = 0; i < 6; ++i)
-    {
-        uint32_t o = DETAIL_LEVEL * DETAIL_LEVEL * i;
-        for (int x = 0; x < DETAIL_LEVEL - 1; ++x)
-        {
-            for (int y = 0; y < DETAIL_LEVEL - 1; ++y)
-            {
-                uint16_t* quadIndices = indices[i][x][y];
-
-#define vid(vx, vy) (o + (vx)*DETAIL_LEVEL + (vy))
-                quadIndices[0] = vid(x, y);
-                quadIndices[1] = vid(x, y + 1);
-                quadIndices[2] = vid(x + 1, y + 1);
-                quadIndices[3] = vid(x + 1, y + 1);
-                quadIndices[4] = vid(x + 1, y);
-                quadIndices[5] = vid(x, y);
-#undef vid
-            }
-        }
-    }
-
-#undef DETAIL_LEVEL
-
-    void* bufferData = nullptr;
-    uint32_t vertexCount = sizeof(verts) / 12;
-    size_t   bufferSize;
-
-    gSphereVertexLayout.mBindingCount = 1;
-
-    switch (gSphereLayoutType)
-    {
-    default:
-    case 0:
-    {
-        //  0-12 sq positions,
-        // 12-16 sq colors
-        // 16-28 sq normals
-        // 28-32 sp colors
-        // 32-44 sp positions + sp normals
-
-        gSphereVertexLayout.mBindings[0].mStride = 44;
-        size_t vsize = vertexCount * gSphereVertexLayout.mBindings[0].mStride;
-        bufferSize = vsize;
-        bufferData = tf_calloc(1, bufferSize);
-
-        add_attribute(&gSphereVertexLayout, SEMANTIC_POSITION, TinyImageFormat_R32G32B32_SFLOAT, 0);
-        add_attribute(&gSphereVertexLayout, SEMANTIC_NORMAL, TinyImageFormat_R32G32B32_SFLOAT, 16);
-        add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD1, TinyImageFormat_R32G32B32_SFLOAT, 32);
-        add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD3, TinyImageFormat_R32G32B32_SFLOAT, 32);
-        add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD0, TinyImageFormat_R8G8B8A8_UNORM, 12);
-        add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD2, TinyImageFormat_R8G8B8A8_UNORM, 28);
-
-        copy_attribute(&gSphereVertexLayout, bufferData, 0, 12, vertexCount, verts);
-        copy_attribute(&gSphereVertexLayout, bufferData, 12, 3, vertexCount, sqColors);
-        copy_attribute(&gSphereVertexLayout, bufferData, 16, 12, vertexCount, sqNormals);
-        copy_attribute(&gSphereVertexLayout, bufferData, 28, 3, vertexCount, spColors);
-        copy_attribute(&gSphereVertexLayout, bufferData, 32, 12, vertexCount, sphNormals);
-    }
-    break;
-    case 1:
-    {
-        //  0-12 sq positions,
-        // 16-28 sq normals
-        // 32-34 sq colors
-        // 36-40 sp colors
-        // 48-62 sp positions
-        // 64-76 sp normals
-
-        gSphereVertexLayout.mBindings[0].mStride = 80;
-        size_t vsize = vertexCount * gSphereVertexLayout.mBindings[0].mStride;
-        bufferSize = vsize;
-        bufferData = tf_calloc(1, bufferSize);
-
-        add_attribute(&gSphereVertexLayout, SEMANTIC_POSITION, TinyImageFormat_R32G32B32_SFLOAT, 0);
-        add_attribute(&gSphereVertexLayout, SEMANTIC_NORMAL, TinyImageFormat_R32G32B32_SFLOAT, 16);
-        add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD1, TinyImageFormat_R32G32B32_SFLOAT, 48);
-        add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD3, TinyImageFormat_R32G32B32_SFLOAT, 64);
-        add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD0, TinyImageFormat_R8G8B8A8_UNORM, 32);
-        add_attribute(&gSphereVertexLayout, SEMANTIC_TEXCOORD2, TinyImageFormat_R8G8B8A8_UNORM, 36);
-
-        copy_attribute(&gSphereVertexLayout, bufferData, 0, 12, vertexCount, verts);
-        copy_attribute(&gSphereVertexLayout, bufferData, 16, 12, vertexCount, sqNormals);
-        copy_attribute(&gSphereVertexLayout, bufferData, 36, 3, vertexCount, spColors);
-        copy_attribute(&gSphereVertexLayout, bufferData, 32, 3, vertexCount, sqColors);
-        copy_attribute(&gSphereVertexLayout, bufferData, 48, 12, vertexCount, sphNormals);
-        copy_attribute(&gSphereVertexLayout, bufferData, 64, 12, vertexCount, sphNormals);
-    }
-    break;
-    }
-
-    gSphereIndexCount = sizeof(indices) / sizeof(uint16_t);
-
-    BufferLoadDesc sphereVbDesc = {};
-    sphereVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
-    sphereVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-    sphereVbDesc.mDesc.mSize = bufferSize;
-    sphereVbDesc.pData = bufferData;
-    sphereVbDesc.ppBuffer = &pSphereVertexBuffer;
-    addResource(&sphereVbDesc, nullptr);
-
-    BufferLoadDesc sphereIbDesc = {};
-    sphereIbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_INDEX_BUFFER;
-    sphereIbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-    sphereIbDesc.mDesc.mSize = sizeof(indices);
-    sphereIbDesc.pData = indices;
-    sphereIbDesc.ppBuffer = &pSphereIndexBuffer;
-    addResource(&sphereIbDesc, nullptr);
-
-    waitForAllResourceLoads();
-
-    tf_free(bufferData);
-    */
-}
-
 void KokkuTestApp::setupActions()
 {
 
@@ -1305,7 +930,6 @@ void KokkuTestApp::setupActions()
 
         return true;
     };
-    //TODO - Check static assignment
     static ICameraController* pCameraCtrl = pCameraController;
     typedef bool (*CameraInputHandler)(InputActionContext* ctx, DefaultInputActions::DefaultInputAction action);
     static CameraInputHandler onCameraInput = [](InputActionContext* ctx, DefaultInputActions::DefaultInputAction action)
@@ -1358,3 +982,22 @@ void KokkuTestApp::setupActions()
     setGlobalInputAction(&globalInputActionDesc);
 }
 
+bool KokkuTestApp::setupCamera()
+{
+    CameraMotionParameters cmp{ 160.0f, 600.0f, 200.0f };
+    vec3                   camPos{ 48.0f, 48.0f, 20.0f };
+    vec3                   lookAt{ vec3(0) };
+
+    pCameraController = initFpsCameraController(camPos, lookAt);
+
+    pCameraController->setMotionParameters(cmp);
+
+    InputSystemDesc inputDesc = {};
+    inputDesc.pRenderer = pRenderer;
+    inputDesc.pWindow = pWindow;
+    inputDesc.pJoystickTexture = "circlepad.tex";
+    if (!initInputSystem(&inputDesc))
+        return false;
+    
+    return true;
+}

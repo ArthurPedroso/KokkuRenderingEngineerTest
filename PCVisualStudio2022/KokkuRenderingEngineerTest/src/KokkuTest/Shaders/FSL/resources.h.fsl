@@ -39,9 +39,7 @@ CBUFFER(uniformBlock, UPDATE_FREQ_PER_FRAME, b0, binding = 0)
 {
     DATA(float4x4, mvp, None);
 #if !defined(SKY_SHADER)
-    DATA(float4x4, toWorld, None);
-    DATA(float4, color, None);
-    DATA(float4, geometry_weight, None);
+    DATA(float4x4, scaleMat, None);
 
     // Point Light Information
     DATA(float3, lightPosition, None);
