@@ -33,3 +33,9 @@ void CastleScene::Load(const GeometryLoadDesc* pTemplate, bool transparentFlags)
     waitForAllResourceLoads();
 
 }
+
+void CastleScene::Unload()
+{
+    removeResource(geom);
+    removeResource(geomData);
+}

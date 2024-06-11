@@ -14,5 +14,6 @@ public:
     Geometry* getGeometry() { return geom; }
 
     void Load(const GeometryLoadDesc* pTemplate, bool transparentFlags);
+    void Unload();
 };
 

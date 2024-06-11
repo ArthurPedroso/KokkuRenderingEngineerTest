@@ -249,6 +249,9 @@ void KokkuTestApp::Exit()
         removeResource(pCastleAlbedo[i]);
         removeResource(pCastleBump[i]);
     }
+    removeResource(pSubmeshSizes);
+    
+    mCastleScene.Unload();
 
     removeSampler(pRenderer, pSamplerSkyBox);
     removeSampler(pRenderer, pSmaplerCastle);
